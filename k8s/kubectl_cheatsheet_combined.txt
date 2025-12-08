@@ -1,0 +1,153 @@
+KUBECTL COMMANDS - DAILY REFERENCE & INTERVIEW CHEAT SHEET
+===========================================================
+
+Format: <command> : <one-line explanation>
+
+--------------------------------------------------
+MOST USED / DAILY COMMANDS
+--------------------------------------------------
+kubectl get pods : List all pods in the current namespace
+kubectl get pods -A : List pods in all namespaces
+kubectl describe pod <pod-name> : Show detailed information about a pod
+kubectl logs <pod-name> : Show logs of a single-container pod
+kubectl logs <pod-name> -c <container-name> : Show logs of a specific container in a pod
+kubectl exec -it <pod-name> -- /bin/bash : Open an interactive bash shell in a container
+kubectl exec -it <pod-name> -- /bin/sh : Open an interactive sh shell in a container
+kubectl apply -f <file.yaml> : Create or update resources from a YAML file (declarative)
+kubectl delete -f <file.yaml> : Delete resources defined in a YAML file
+kubectl get deployments : List all deployments in the current namespace
+kubectl describe deployment <deployment-name> : Show detailed information about a deployment
+kubectl rollout restart deployment <deployment-name> : Restart all pods in a deployment (trigger new rollout)
+kubectl rollout status deployment/<deployment-name> : Check the status of a deployment rollout
+kubectl scale deployment <deployment-name> --replicas=<n> : Scale a deployment to n replicas
+kubectl set image deployment/<name> <container>=<image:tag> : Update container image in a deployment (rolling update)
+kubectl get svc : List all services in the current namespace
+kubectl port-forward <pod-name> <local-port>:<pod-port> : Forward local port to a pod port
+kubectl get all : List common resources (pods, services, deployments, etc.) in the namespace
+
+--------------------------------------------------
+CLUSTER & NODE COMMANDS
+--------------------------------------------------
+kubectl version : Show Kubernetes client and server versions
+kubectl cluster-info : Display cluster control plane and service endpoints
+kubectl get nodes : List all nodes in the cluster
+kubectl describe node <node-name> : Show detailed information about a node
+
+--------------------------------------------------
+CONTEXT & NAMESPACE COMMANDS
+--------------------------------------------------
+kubectl config get-contexts : List all kubeconfig contexts
+kubectl config use-context <context-name> : Switch to a different context
+kubectl config current-context : Show the current context
+kubectl get namespaces : List all namespaces in the cluster
+kubectl create namespace <name> : Create a new namespace
+kubectl delete namespace <name> : Delete a namespace
+kubectl config set-context --current --namespace=<name> : Set default namespace for current context
+
+--------------------------------------------------
+WORKLOADS: PODS, DEPLOYMENTS, REPLICASETS
+--------------------------------------------------
+kubectl get pods : List pods in the current namespace
+kubectl describe pod <pod-name> : Show detailed information about a pod
+kubectl delete pod <pod-name> : Delete a specific pod
+kubectl create deployment <name> --image=<image> : Create a deployment imperatively
+kubectl get rs : List ReplicaSets in the current namespace
+kubectl describe rs <rs-name> : Show detailed information about a ReplicaSet
+kubectl delete deployment <deployment-name> : Delete a deployment
+
+--------------------------------------------------
+SERVICES, INGRESS & NETWORKING
+--------------------------------------------------
+kubectl get svc : List all services in the current namespace
+kubectl describe svc <service-name> : Show detailed information about a service
+kubectl get endpoints : List endpoints for services
+kubectl expose deployment <name> --type=LoadBalancer --port=80 --target-port=8080 : Expose a deployment as a service
+kubectl get ingress : List all ingress resources in the current namespace
+kubectl describe ingress <name> : Show detailed information about an ingress
+
+--------------------------------------------------
+CONFIGMAPS & SECRETS
+--------------------------------------------------
+kubectl get configmaps : List all ConfigMaps in the current namespace
+kubectl describe configmap <name> : Show detailed information about a ConfigMap
+kubectl create configmap <name> --from-literal=key=value : Create a ConfigMap from literal values
+kubectl get secrets : List all Secrets in the current namespace
+kubectl describe secret <name> : Show detailed information about a Secret
+kubectl create secret generic <name> --from-literal=key=value : Create a generic Secret from literal values
+
+--------------------------------------------------
+TROUBLESHOOTING & DEBUGGING
+--------------------------------------------------
+kubectl get events : Show recent cluster events in the current namespace
+kubectl describe <resource>/<name> : Show detailed information for any resource (great for debugging)
+kubectl top nodes : Show CPU and memory usage for nodes (requires metrics-server)
+kubectl top pods : Show CPU and memory usage for pods (requires metrics-server)
+kubectl logs <pod-name> --previous : Show logs from the previous container instance (after a crash)
+kubectl exec -it <pod-name> -- env : Print environment variables from a container
+kubectl cp <pod-name>:<pod-path> <local-path> : Copy files from a pod to the local machine
+
+--------------------------------------------------
+APPLY / CREATE / DELETE / DRY-RUN
+--------------------------------------------------
+kubectl create -f <file.yaml> : Create resources from a YAML file (imperative)
+kubectl apply -f <file.yaml> : Apply or update resources from a YAML file (declarative)
+kubectl delete -f <file.yaml> : Delete resources defined in a YAML file
+kubectl apply -f <file.yaml> --dry-run=client : Simulate apply without changing anything
+kubectl create deployment <name> --image=<image> --dry-run=client -o yaml : Generate YAML for a deployment without creating it
+
+--------------------------------------------------
+LABELS & ANNOTATIONS
+--------------------------------------------------
+kubectl label pod <pod-name> key=value : Add or update a label on a pod
+kubectl label pod <pod-name> key- : Remove a label from a pod
+kubectl annotate pod <pod-name> key=value : Add or update an annotation on a pod
+kubectl annotate pod <pod-name> key- : Remove an annotation from a pod
+
+--------------------------------------------------
+RESOURCE DISCOVERY & API HELP
+--------------------------------------------------
+kubectl api-resources : List all available resource types and short names
+kubectl api-versions : List all supported API versions on the server
+kubectl explain <resource> : Show documentation for a resource (fields and usage)
+kubectl explain <resource>.spec : Show documentation for the spec field of a resource
+
+--------------------------------------------------
+HANDY ONE-LINERS (GOOD FOR INTERVIEW DEMOS)
+--------------------------------------------------
+kubectl get pods -o wide : List pods with node and IP details
+kubectl get pods -l <key>=<value> : List pods matching a specific label selector
+kubectl delete pod -l <key>=<value> : Delete pods matching a label selector
+kubectl get pods --watch : Watch pods in real time as they change
+kubectl get deployments -o yaml : Output deployment definitions in YAML
+kubectl get pods -A -o wide : List pods in all namespaces with extra details
+
+--------------------------------------------------
+STORAGE: PV, PVC, STORAGECLASS & CSI
+--------------------------------------------------
+kubectl get storageclass : List all StorageClasses in the cluster
+kubectl get sc : Short form to list all StorageClasses
+kubectl describe storageclass <name> : Show detailed information about a StorageClass
+kubectl get storageclass -o wide : List StorageClasses with extra details
+kubectl get storageclass -o yaml : Output StorageClass definitions in YAML
+kubectl delete storageclass <name> : Delete a StorageClass (use with caution)
+kubectl patch storageclass <name> -p '<json-patch>' : Patch/modify a StorageClass definition
+
+kubectl get pv : List all PersistentVolumes
+kubectl get pvc : List all PersistentVolumeClaims in the current namespace which is attached to pod
+kubectl get pvc -A : List PersistentVolumeClaims in all namespaces
+kubectl get pv,pvc : List PVs and PVCs together
+kubectl describe pv <name> : Show detailed information about a PersistentVolume
+kubectl describe pvc <name> : Show detailed information about a PersistentVolumeClaim
+kubectl delete pv <name> : Delete a PersistentVolume (make sure reclaim policy is understood)
+kubectl delete pvc <name> : Delete a PersistentVolumeClaim in the current namespace
+kubectl get pvc -n <namespace> : List PVCs in a specific namespace
+
+kubectl get csidrivers : List CSI drivers registered in the cluster (if supported)
+kubectl get csinodes : List CSI node objects associated with each node
+kubectl get volumeattachments : List volume attachment objects (CSI-managed volumes)
+kubectl describe csidriver <name> : Describe a specific CSI driver
+kubectl describe volumeattachment <name> : Show details of a volume attachment object
+
+--------------------------------------------------
+END OF FILE
+--------------------------------------------------

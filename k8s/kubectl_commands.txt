@@ -1,0 +1,96 @@
+KUBECTL COMMANDS - QUICK INTERVIEW REFERENCE
+==============================================
+
+Most Frequently Used Commands (Top Commands First)
+--------------------------------------------------
+
+kubectl get pods : List all pods in the current namespace
+kubectl describe pod <pod-name> : Show detailed information about a pod
+kubectl logs <pod-name> : Show logs of a single-container pod
+kubectl exec -it <pod-name> -- /bin/bash : Access a container shell (bash)
+kubectl apply -f <file.yaml> : Create or update resources from a YAML file
+kubectl delete pod <pod-name> : Delete a specific pod
+kubectl rollout restart deployment <name> : Restart all pods in a deployment
+kubectl get deployments : List all deployments
+kubectl get svc : List all services in the namespace
+kubectl port-forward <pod-name> <local-port>:<pod-port> : Forward local port to pod
+kubectl top pods : Show CPU/Memory usage for pods (requires metrics-server)
+kubectl scale deployment <name> --replicas=<n> : Scale the number of replicas
+
+--------------------------------------------------
+Cluster & Node Commands
+--------------------------------------------------
+
+kubectl version : Show Kubernetes client & server versions
+kubectl cluster-info : Display cluster control plane and services info
+kubectl get nodes : List all nodes in the cluster
+kubectl describe node <node-name> : Show detailed information about a node
+
+--------------------------------------------------
+Namespace Commands
+--------------------------------------------------
+
+kubectl get namespaces : List all namespaces
+kubectl create namespace <name> : Create a new namespace
+kubectl delete namespace <name> : Delete a namespace
+kubectl config set-context --current --namespace=<name> : Set default namespace
+
+--------------------------------------------------
+Deployment Commands
+--------------------------------------------------
+
+kubectl create deployment <name> --image=<image> : Create a deployment imperatively
+kubectl describe deployment <name> : View detailed deployment information
+kubectl set image deployment/<name> <container>=<image> : Update container image of a running Kubernetes workload 							  without editing the YAML file manually.
+kubectl rollout status deployment/<name> : Check rollout/update status
+kubectl rollout undo deployment/<name> : Roll back to previous version
+
+--------------------------------------------------
+Service & Networking Commands
+--------------------------------------------------
+
+kubectl get endpoints : Show endpoints used by services
+kubectl expose deployment <name> --type=LoadBalancer --port=80 --target-port=8080 : Expose deployment as a service
+kubectl get ingress : List all ingress rules
+kubectl describe ingress <name> : Detailed ingress rule info
+
+--------------------------------------------------
+ConfigMap & Secret Commands
+--------------------------------------------------
+
+kubectl get configmaps : List ConfigMaps
+kubectl create configmap <name> --from-literal=key=value : Create a ConfigMap
+kubectl get secrets : List Secrets
+kubectl create secret generic <name> --from-literal=key=value : Create a Secret
+kubectl describe secret <name> : Show details of a secret
+
+--------------------------------------------------
+Pod Debugging & Utility Commands
+--------------------------------------------------
+
+kubectl logs <pod-name> -c <container> : Get logs of a specific container
+kubectl exec -it <pod-name> -- /bin/sh : Open a shell in the container
+kubectl cp <pod>:<path> <local-path> : Copy files from pod to local machine
+kubectl get events : Show cluster events
+kubectl explain <resource> : Show documentation for a resource
+
+--------------------------------------------------
+Apply / Create / Delete Commands
+--------------------------------------------------
+
+kubectl create -f <file.yaml> : Create resource from YAML (imperative)
+kubectl apply -f <file.yaml> : Apply configuration (declarative)
+kubectl delete -f <file.yaml> : Delete resources defined in YAML
+kubectl get all : List all major resource types
+
+--------------------------------------------------
+Helpful Discovery / Reference Commands
+--------------------------------------------------
+
+kubectl api-resources : List all available resource types
+kubectl api-versions : List all supported API versions
+kubectl config view : Show kubeconfig settings
+
+--------------------------------------------------
+END OF FILE
+--------------------------------------------------

@@ -1,0 +1,72 @@
+DOCKER COMPOSE COMMANDS - DAILY REFERENCE & INTERVIEW CHEAT SHEET
+==============================================================
+
+Format: <command> : <one-line explanation>
+
+--------------------------------------------------------------
+MOST USED / DAILY COMMANDS
+--------------------------------------------------------------
+docker compose up : Create and start all services defined in docker-compose.yml
+docker compose up -d : Start services in detached/background mode
+docker compose down : Stop and remove containers, networks, and resources created by Docker Compose
+docker compose ps : List containers managed by Docker Compose
+docker compose logs : Show logs from services
+docker compose logs -f : Tail/stream logs for all services
+docker compose stop : Stop running services without removing containers
+docker compose start : Start services that were previously stopped
+docker compose restart : Restart services
+
+--------------------------------------------------------------
+SERVICE-LEVEL COMMANDS
+--------------------------------------------------------------
+docker compose exec <service> <command> : Execute a command inside a running service container
+docker compose run <service> : Run a one-time command in a new container
+docker compose run --rm <service> : Run a one-time container and remove it after exit
+docker compose kill : Force stop running service containers
+
+--------------------------------------------------------------
+BUILD & IMAGES
+--------------------------------------------------------------
+docker compose build : Build all service images
+docker compose build <service> : Build a single service image
+docker compose pull : Pull latest images for services
+docker compose push : Push built images to registry
+docker compose images : List images used by Compose
+
+--------------------------------------------------------------
+SCALE, RESOURCES & ORCHESTRATION
+--------------------------------------------------------------
+docker compose scale <service>=<count> : Scale a service to a specific number of containers
+docker compose up --scale <service>=<count> : Scale during startup
+docker compose top : Display running processes of services
+docker compose stats : Resource usage of services (similar to docker stats)
+
+--------------------------------------------------------------
+CONFIG, VALIDATION & DEBUGGING
+--------------------------------------------------------------
+docker compose config : Validate and view merged Compose configuration
+docker compose config --services : List defined services
+docker compose config --volumes : List declared volumes
+docker compose events : Stream real-time updates from Compose
+docker compose version : Show Docker Compose version
+
+--------------------------------------------------------------
+VOLUMES & NETWORKS
+--------------------------------------------------------------
+docker compose down -v : Remove containers and volumes
+docker compose down --remove-orphans : Remove orphan containers not defined in current compose file
+docker compose volume ls : List volumes used by Compose
+docker compose network ls : List networks used by Compose
+
+--------------------------------------------------------------
+COMMON ONE-LINERS (GREAT FOR INTERVIEWS)
+--------------------------------------------------------------
+docker compose up --build : Build images before starting services
+docker compose run --rm <service> sh : Start a temporary shell for debugging
+docker compose down -v --remove-orphans : Clean full Compose environment
+docker compose exec <service> env : Show environment variables in a service
+docker compose logs -f --tail=100 : Stream last 100 log lines from all services
+
+--------------------------------------------------------------
+END OF FILE
+--------------------------------------------------------------

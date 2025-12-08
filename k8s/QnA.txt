@@ -1,0 +1,160 @@
+K8s QnA:
+=================
+* Which components run on the master node?
+
+	Ans : Kube-apiserver, etcd, kube-scheduler, kube-controller-manager, and optionally cloud-controller-manager.
+
+* Which services control nodes?
+
+	Ans : The kube-apiserver is the central API that nodes talk to. Controllers (in kube-controller-manager) ensure the desired state, and the scheduler decides which node runs a pod. Kubelet on each node listens to the API server to run workloads.
+	
+*  how do we use updating something if kubectl won't allow us do so ?
+	Ex : changing the "containerPort" in "client-pod.yaml" errored out.
+	Ans : we can use a different type of object(Deployment) besides a pod which allowed to change any piece of configuration tied to a pod that we want to.
+	- to solve this issue with updating the configuration for our pod, rather than trying to make use of a pod, we'll create a deployment.
+	
+* Can a Service of type 'ClusterIP' be used to access a pod from outside the cluster?
+	Ans : No. The ClusterIp service used to provide access to other pods running inside the cluster.
+	
+Commands :
+1. Get the Pods created by the Deployment
+	kubectl get pods -l <label-key>=<label-value>
+	Ex: kubectl get pods -l component=web
+	
+2. Check logs of a container inside a Pod
+	kubectl logs <pod-name>
+	kubectl logs <pod-name> -c <container-name>
+	Ex : kubectl logs client-deployment-7d9c8b9d8c-xk2z4 -c client
+	
+3. Tail logs in real time (stream logs)
+	kubectl logs -f <pod-name> -c <container-name>
+		Use Ctrl + C to stop streaming.
+		
+4. view logs from previous crashed container instance
+	kubectl logs <pod-name> -c <container-name> --previous
+	
+5. To create replicas of a container, you cannot do it with a "Pod object" directly.
+	A Pod is always 1 instance. To run multiple copies, you must use either use:
+
+	✔ ReplicaSet
+	or (recommended)
+	✔ Deployment (most common in real projects)
+
+
+IMP Notes:
+---------------
+Pod:
+	A Pod is the smallest deployable unit in Kubernetes.
+	A Pod can have one or more containers inside it (usually 1, but sidecar patterns may use 2+).
+	However, you cannot scale/replicate a Pod by itself. Kubernetes does not manage replica count at Pod level.
+	
+Deployment:
+	Deployment creates multiple Pod replicas, and each Pod contains container(s)
+	A Deployment is a controller that manages ReplicaSets, and ReplicaSets manage multiple Pod replicas.
+	So the hierarchy is: Deployment → ReplicaSet → Pods → Containers
+
+* Pods die and stay dead; Deployments/ReplicaSets recreate them
+
+⭐ Good to Know (Important for Interviews):
+	Feature					Pod			ReplicaSet			Deployment
+* Smallest unit in K8s		✔				❌					❌
+* Can scale replicas		❌				✔					✔
+* Self-healing				❌				✔					✔
+* Rolling updates/rollbacks	❌				❌					✔ (main reason it's used)
+
+✔ A Pod is the smallest deployable unit and can contain one or more containers, but it cannot be scaled by itself. A Deployment is a higher-level controller that manages ReplicaSets, which ensure the desired number of identical Pod replicas, allowing scaling and rolling updates.
+
+6. Why is a PVC namespace-scoped?
+	Ans : Because PVC is used by applications (Pods/Deployments), and those apps also run within a namespace.
+	So the storage claim must belong to that namespace for security and isolation.
+	Example namespaces: default, dev, prod, kube-system
+
+	A PVC created in dev namespace cannot directly be used by a Pod in prod namespace.
+	
+7. why we are not using the "LoadBalancer" Service type to traffic into your application/cluster.(video:237) ?
+	Ans: a load-balancer actually does two separate things inside of your cluster.
+		1. need to create a configuration file of type service, and a sub-type of "load-balancer". here, its going to  allow access to only "one set of pod" inside of your application.
+		2.  load-balancer would not be able to give us access to multiple pods deployed via different deployments ( Ex: need to access  both UI and API access)
+		
+		* When you make a load-balancer service, Managed Kubernetes is going to actually do something in the background for you, as well. It's going to reach out to your cloud provider (AWS, or Google Cloud) and it's going to create a load-balancer using their configuration.
+		
+		*  it's going to set up this external resource outside of your cluster (cloud provider LoadBalancer), and then it's going to automatically configure that load-balancer to send traffic into your cluster and govern access to this very
+		specific set of pods's configured Load balancer.
+		
+8. LoadBalancer vs Ingress: 
+
+	✔ LoadBalancer is best for exposing ONE service externally.
+
+	✔ Ingress is best for exposing MULTIPLE services with routing, domains, and TLS using ONE external IP.
+	
+	LoadBalancer Service:
+	--------------------
+		✔ Best when:
+
+			You have one application to expose
+			You want simple, direct public access
+			You are running on a cloud provider (EKS, GKE, AKS)
+
+		✔ Pros:
+
+			Very simple to configure
+			Direct external IP from cloud (ELB/NLB etc.)
+			No need for extra components
+
+		❌ Cons:
+
+			Each LoadBalancer = separate cloud load balancer = more cost
+			No routing features (cannot route /api and /ui)
+			Not suitable for applications needing domain rules or TLS at scale
+
+		📌 When to use:
+
+			If you only have 1 or 2 external services, LoadBalancer is enough.
+			
+	Ingress:
+	----------
+	✔ Best when:
+
+		* You want to expose many services
+		* You need domain-based routing
+		
+		Example:
+
+			api.example.com → backend
+			web.example.com → frontend
+			You need path-based routing
+			
+		Example:
+
+			/api → backend
+			/app → frontend
+
+		*You want TLS/HTTPS managed in one place
+
+		*You need rewrite rules, rate limiting, etc.
+
+	✔ Pros:
+
+		* One external IP → routes traffic to many services
+
+		* Much cheaper than LoadBalancers
+
+		* Supports:
+
+			HTTPS/TLS
+			Path routing
+			Domain routing
+			Authentication
+			WAF-like features
+			Load balancing rules
+
+		* Works with multiple controllers (NGINX, Traefik, HAProxy, etc.)
+
+	❌ Cons:
+
+		* Requires installing an Ingress Controller
+		* More configs compared to LoadBalancer
+
+	📌 When to use:
+
+		If you have multiple backend/frontend services, always prefer Ingress.

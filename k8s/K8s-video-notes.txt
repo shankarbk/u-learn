@@ -1,0 +1,1561 @@
+DOCKER:
+=======
+
+- docker pull <image-name> : it only pulls an image from docker hub to your local system\
+	- to create a container out of this image use the below command :
+		docker run -d --name <container-name> <image-name>
+		 "--d" stands for detach mode 
+		Ex: > docker pull apache
+			> docker run -d --name my-new-apache-container -p 8081:8080 apache
+
+1.	create and run a container using an image.
+		>docker run <image-name>
+		
+		> docker run -d <image-name> - Starts a new container in the background
+		
+		> docker run --name <myapp-container> <myapp-image>
+		
+	
+	* any time that we execute docker run with an image, we not only get that file system snapshot, but we also get this default command that is supposed to be executed after the container is created.
+
+	docker run <image-name> <command>
+	
+	* this  alternate command executed inside the container after it starts up. This overrides the default command.
+	* the startup commands that we are executing are being based upon the file system included with the image.
+	
+2. docker ps
+	
+	* list all the different running containers that are currently on your machine.
+	
+* we've only been running images or creating containers that run very quickly and then immediately close down.
+	ex : docker run hello-world
+		 docker run busybox echo hi there
+		 
+	docker ps --all 
+	listing of all the containers that we have ever created(running/non-running).
+	it lists all containers that we have started up and then have either been shut down on our behalf or shut down naturally.
+	
+* docker run = docker create + docker start
+	docker create <image-name> = used to create a container out of an image. (setting-up the file-system snapshot to be used to create the container.)
+	docker start <container-id> = used to actually start an image.(we actually execute this startup command)
+	
+	ex : > docker create hello-world
+			972d9c70dab26e13c070dd156733116ee876c71b9b56b84aeff0d5b6ad22295a
+		 > docker start -a 972d9c70dab26e13c070dd156733116ee876c71b9b56b84aeff0d5b6ad22295a
+		 
+	"-a" - it's going to make Docker actually watch for output from the container and print it out to your terminal.
+	
+* When a container is exited, we can still start it back up. So just because a container's stopped, doesn't mean that it's like dead or cannot be used again.
+
+* When you have a container that's already been created, we cannot replace that default command or over written command. 
+	Ex :  > docker create busybox echo hi there
+			972d9c70dab26e13c070dd156733116ee876c71b9b56b84aeff0d5b6ad22295a
+			
+		  > docker start -a 972d9c70dab26e13c070dd156733116ee876c71b9b56b84aeff0d5b6ad22295a
+			hi there
+			
+		  > docker start -a 972d9c70dab26e13c070dd156733116ee876c71b9b56b84aeff0d5b6ad22295a echo bye there - you can't do this
+	  
+3. docker system prune -a : deletes all 
+							 - stopped containers
+							 - networks not used by at least one container
+							 - dangling images
+							 - unused build cache
+							 
+	docker image prune -a : this will remove all the images without atleast one container associated to them.
+							 
+	docker container prune : it will delete all the stopped containers.
+	
+	docker rm <container-name> : Remove the container
+
+* build cache -  build cache contains all image that you have fetched from Docker Hub.
+
+4. docker logs <container-id> 
+	The logs command can be used to look at a container and retrieve all the information(logs) that has been emitted from it. (you can use it if you don't want to use "-a" option with docker start -a <container-id>)
+	The logs command used to debug or set up new containers, inspect a container and see what's going on inside of it.
+	
+5. to Stop the running container :
+	> docker stop <container-id> - 
+		When you issue a docker stop command, a hardware signal (SIGTERM:terminate signal) is sent to the process or the primary process inside that container.
+		SIGTERM is used to stop a process inside of your container and shut the container down, and you want to give that process a little bit of time to shut itself down and do a little bit of cleanup.
+	
+	
+	
+	> docker kill <container-id> -
+		the docker kill command issues a SIGKILL (shut down right now) to the primary running process inside the container.
+		If it feels like the container has locked up and it's not responding to the docker stop command, then we could issue docker kill instead.
+		when you issue docker stop to a container, if the container does not automatically stop in 10 seconds, then Docker is going to automatically fall back to issuing the docker kill command.
+		
+6. docker exec -it <container-id> <command>
+	execute additinal command inside running container.
+	"-it" -  allows us to type input directly into the container.
+	-i (--interactive) : attach our terminal to the stdin channel of that new running container process.
+	-t (--tty) :  A pseudo-TTY emulates a terminal, allowing you to interact with the container's process as if you were directly connected to a real terminal.
+	
+	* this command also used to get the shell terminal of your container, it provide full terminal access inside the context of the container,which is extremely powerful for debugging.
+	Ex: docker exec -it busybox sh
+		docker exec -it 0fdjajbdjk npm run test
+	* (bash, powershell, zsh, sh) - These are all programs that allow you to type commands into your terminal and have them be executed.
+	
+	* we can also use docker run <image-name> sh : It start up a shell when the container first starts, that's going to displace default command from running.
+	Ex: docker run -it busybox sh
+		
+	
+	
+* when you are running Docker on your machine, every single container that you are running is running inside of a virtual machine running Linux.
+* Every process that we create in a Linux environment has three communication channels attached to it that we refer to as stdin, stdout, and stderr. These channels are used to communicate information either into the process or out of the process.
+	Stdin - is used to communicate information into the process.
+	stdout - going to convey information that is coming from the process. stdout might be redirected over to your running terminal,
+	stderr - very similar to stdout, that's going to be redirected to show up on the screen of your terminal.
+	
+* By default between two containers, they do not automatically share their file system. because these two running containers have absolutely, completely separate file systems, and there's no sharing of data between the two.
+
+* dockerfile : A dockerfile is essentially a plain text file with configuration.
+	This configuration defines how our container behaves and what it does when it starts up as a container.
+	we'll be creating custom image using this Dockerfile
+	
+* BuildKit : BuildKit is an improved backend to replace the legacy builder. BuildKit is the default builder for users on Docker Desktop, and Docker Engine as of version 23.0.
+	To Disabling Buildkit set the environment variable as below (powershell) : 
+		> $env:DOCKER_BUILDKIT = 0
+		> docker build -t your-image-name .
+	
+* the purpose of a specifying a base image is to give an initial starting point, or an initial set of programs that we can use to further customize our image. it includes a default set of programs that are very useful for what you and I are trying to accomplish.
+ Ex : Alpine base image has a set of programs inside of it that are very useful for installing and running Redis.
+ 
+7. docker build . : The build command is what we use to take a Docker file and generate an "image" out of it. it prints an image-id in console.
+	. (dot) :  specifying the build context. The build context is essentially the set of files and folders that belong to our project. It's a set of files and folders that we want to kind of encapsulate or wrap in this container
+	by default it looks for Dockerfile in the build context, if you have custom name to the file (Dockerfile.dev) use the below command
+		> docker build -f Dockerfile.dev .
+	
+8. docker run <image-id> - creates the container from an image.
+
+* we can use the "-t" to tag the image, which is easier to remember, instead of image-id.
+	docker build -t <docker-id>/<repo/project-name>:<version> . 
+	
+	<version> - adding version to docker is actually called tagging.
+
+	Ex: 
+		step1: docker build -t sbk/redis:latest . 
+		step2: docker run sbk/redis
+		
+	
+	sbk		: docker-id
+	redis	: project-name
+	latest	: version
+	
+* FROM instruction : copies the file system snapshot and default command from another image into the custom image we're building.
+
+* Any time that we make a change to our Dockerfile, docker going to have to only rerun the series of steps from the changed line on down.
+	even though the same instruction exists and if the order of those lines got changed, it rebuilds the image
+	
+* from the container we can generate an image as well. this image can then use at some point in the future.
+	Ex : Terminal window 1:
+			> docker run -it alpine sh : create a container by overriding default command with sh(shell)
+			> apk add --update redis : execute the commands inside the container
+			
+		Terminal window 2: run a command using the Docker CLI. That's going to essentially take a snapshot of that running container and assign 	default command to it and generate an image out of the entire thing.
+			> docker ps --all : get the id of the running container
+			> docker commit -c "CMD 'redis-server'" <container-id> : it returns the <image-id>
+			> docker run <image-id> : creates an container from the above image
+			
+		 
+	* If you want to add tags after "docker build ." 
+	> docker build . : prints <image-id>
+	> docker tag <image-id> <tag-name>
+	
+* Docker Hub : is a repository of public images that we can easily pull into our build process.
+
+* Alpine version of an image means you're getting the absolute most stripped down version of that image possible.(not going to get a bunch of additional pre-installed programs.)
+	Ex: FROM node:20-alpine3.21
+	
+* By default the only files and folders that are available inside the container is exactly whatever came out of the file system snapshot from the node image. your project folders are not availabe inside that container file snapshot, you need to COPY your project files/directories into the containers file system snapshot.
+
+COPY instruction : the copy instruction is used to move files and folders from our local file system on your machine to the file system inside of that temporary container that is created during the build process.
+	Ex : COPY ./ ./ 
+		the path from our folder that is the first argument is relative to the build context(docker build .)
+		
+* In order to make sure that any request from either your computer or some outside computer will be redirected into the container, we have to set up a explicit port mapping.
+	The port mappig is strictly a runtime constraint (only on docker-cli, not inside the dockerfile). applicable only when we run a container or start a container up.
+
+	port mapping : A port mapping essentially says anytime that someone makes a request to a given port on your local network, take that request and automatically forward it to some port inside the container.
+	
+	* this is only talking about incoming requests. Your Docker container can by default make requests on its own behalf to the outside world.
+	Ex : npm install command in dockerfile during the Docker built process it reaches to the outside world to install dependencies.
+	
+WORKDIR  instruction : after adding this instructionin dockerfile, any following commands/instructions that we add to our Docker file will be executed relative (inside) to this folder.
+
+* Ex: simple web application :
+	* If we don't make a change to a dependency inside of the project, we probably don't want to rerun NPM install.
+	* we changed one of the files that was copied over during that step (COPY ./ ./), Because we made a change to source file. every step after it has to be executed again (rebuilds the container, even though did not make any change to dependency file inside of our project).
+	* the ideal usecase is : If we don't make a change to a dependency inside of the project, we probably don't want to rerun NPM install. to acheive this we'll split the COPY operation into two different steps.
+	Ex : Before :
+			FROM node:14-alpine
+			WORKDIR /usr/app
+			COPY ./ ./
+			RUN npm install
+			CMD ["npm", "start"]
+			
+		 After : 
+			FROM node:14-alpine
+			WORKDIR /usr/app
+			COPY ./package.json ./
+			RUN npm install
+			COPY ./ ./
+			CMD ["npm", "start"]
+			
+		* make sure that you are only copying the bare minimum for each successive step.
+		
+* to connect 2 containers (Ex: web application ---> redis ), 
+	Default behaviour : these two containers do not have any automatic communication between them, They are two absolutely isolated processes that don't have any communication. to do so, we need to set up some networking infrastructure between the two. There are 2 options.
+	
+	1. Use docker CLI network feature -  if we use this,we have to be reran every single time you start up your both containers.
+	
+	2. Use docker compose - Docker Compose is a separate CLI tool that gets installed along with Docker.
+		* Docker Compose helps you to avoid to write repetitive commands with the Docker CLI when every time you want to start up a container.(Ex : docker Run, docker Exec and we've been specifying ports and tags and all this stuff just all the time.)
+		* Docker Compose allows to executing "docker run" easier.(by avoiding lot of options and flags)
+		
+		* Docker Compose helps to start up multiple Docker containers at the same time, and automatically connect them together with some form of networking in some automated fashion.
+		
+		* docker-compose.yaml - contains all the options we would normally pass it to docker-cli (Ex : docker build -t simpleweb, docker run -p 8080:8080 simpleweb)
+			
+		* The docker-compose CLI parses the content of docker-compose.yaml and create all the different containers with the correct configuration that we specified. (docker-compose.yaml --> docker-compose CLI.)
+		
+		file : docker-compose.yaml
+		--------------------------
+		version: '3'		# version of Docker Compose
+		services:			# defining two services, these services take the form of two different Docker containers (ex : redis-server and node-app)
+		  redis-server:
+			image: 'redis'  # specify the image that we want Docker Compose to use to create this container.
+		  node-app:
+			restsrt: always	# always restart policy for our node app container.
+			build: .		# want this container to be built using the Dockerfile inside the current directory.
+			ports:			# specify all the different ports that we want to have be opened up on this container.
+			  - '4001:8081'	# Array of ports
+			  
+			  
+		Code explanation :
+			notice that we have put absolutely no configuration into this file to specify any layer of networking. by just defining these two services inside this file, Docker Compose is going to automatically create both these containers on the same network, and they have free access to each other and can exchange as much information as they want without having to exchange or open up any ports between the two.
+			- we need to change only the connection string of our react application.
+			
+	* To create a instance of all the services listed inside of our composed file.
+		> docker compose up (equivalent docker-CLI command  : > docker run myimage)
+		 OR
+		> docker compose up --build (equivalent docker-CLI command  : > docker build . + docker run myimage) - rebuilds the images that are listed inside of our Docker composed file, which gets the latest changes.
+		
+		
+	*  with Docker Compose, we can automatically start up multiple containers in the background at the same time, and then close them all at the same time with one single command. which allows terminal back to other work.
+		- docker-compose up -d : To start up a group of containers in the background using "-d".
+		- docker-compose down : stop all of our running containers.
+		
+	* how to deal with containers that crash for some given reason ?
+	* How to automatically restart the crashed container ?
+		- adding a restart policy inside docker-compose.yaml file. find the restart policy below.
+			"no"		- its a default policy assigned to all of our containers. it'll never attempt to restart the container if it stops or crashes.
+							 'no' restart policy ou specifically have to put it in quotes either double or single because in a YAML file, the value no gets interpreted as false.
+			always		- if the container stops for any reason, always attemps to restart it.
+			on-failure	- Only restart if the container stops with an error code.
+			unless-stopped - always restart unless we (the developers) forcibly stops it.
+			
+9. docker-compose ps (similar to docker ps) : print out the status of the running containers inside of my Docker compose file.
+	this only works if you run it in the same directory as docker-compose.yaml file.
+	
+working on Project :
+	* if we want to somehow get source code changes to be reflected inside of our container, we need to either rebuild the image or figure out some clever solution. the changes to the source code is not reflecting because, when we initially create the image, we're essentially taking a snapshot of all of the source code inside of our project directory and we're building our image with that snapshot, these snapshot that is locked in time and by default is not going to be updated unless we rebuild the image.
+	
+	we need to get rid of doing this straight copy (COPY instruction in Doclerfile) which is good for only development environment, but not suited to prod. So rather than doing the straight copy, we need to modify Docker run command that we use to start up new container by using the feature called "volumes".
+
+	anytime we make a change to this code.
+		the ideal solution is not to rebuild the image every time we make a change to our source code. so, to make sure that any changes that we make to our source code get automatically propagated into the container as well. for this use case we use "docker volumes".
+		
+		
+	ex : docker run -p 3000:3000 -v /app/node_modules -v $(pwd)(folder outside the containsr):/app(folder inside containsr) <image-id>
+		-v /app/node_modules = When we do not use the colon and we just list a folder inside the container, we're essentially saying we want this to be a placeholder for the folder that is inside the container. Don't try to map it up against anything.
+		
+		$(pwd):/app = $(pwd) - folder outside the container. /app - folder outside the container
+		
+	* we override our default start command of our image to run our tests.
+		in dockerfile.def defaukt command is "CMD ["npm", "run", "start"]", below is the command to override and execute the tests 
+			> docker build -f Dockerfile.dev . --> returns the <image-id>, then use the below command
+			> docker run -it <image-id> npm run test
+	
+	* The volume is essentially gonna set up a reference that's going to point back to our local machine and give us access to the files and folders inside of these folders on the local machine.
+
+	* NGINX : Its a piece of software that runs on a server machine which can respond to requests from a browser, this piece of software is called NGINX.  it is an extremely popular web server. It's really just about taking incoming traffic and somehow routing it or somehow responding to it with some static files. helpful for creating production version of our web container.
+	
+		- If the requests to NGINX is increased, we need to spinup more NGINX servers (Ex: 10 Nginx servers), Here One NGINX server becomes load balancer(Proxy Server) which route traffic to other NGINX servers(Ex: 10 NGINX servers).
+		
+		- Caching is a core feature of NGINX proxy.
+		
+		- we Shold make only one entrypoint to your application using proxy server. which is publicly accessible, reduces server 
+		attack risks.
+		
+		- functionality of NGINX server.
+			- load balancing
+			- caching
+			- security (encrypted communication, configure all the security measures to one publicly exposed proxy, so the rest 
+				of the servers are secured)
+			- It compress the response (to reduce the bandwidth usage and improve the load time) and sends the response in 
+				chunks (segmentation)
+				
+		- where do you configure the NGINX whether it should act as webserver of proxy server ?
+			- nginx.config file
+			
+	
+		- In k8s, The NGINX ingress controller, which acts as loadbalancer used inside the cluster and forwards the requests internally, its not publicly accessible. once we deploy our application to cloud, the cloud loadbalancers (Ex: AWS loadbalancer) actally gets these requests from public and forward the request to nginx (ingress controller).
+	
+	Ex : in "Dockerfile.dev" , this command "CMD ["npm", "run", "start"]" spins up the development server, development server falls away because it's really not appropriate to be running in a production environment, because It has a lot of processing power inside of it dedicated to processing these JavaScript files. we're no longer making any changes to the JavaScript code of our project. so development server is not appropriate to use in production.
+	
+		npm run build : this command builds a production version of application. we'll be using this command along with NGINX. in a saperate dockerfile for production environment for our web container.
+		
+	81-implementing - directory has latest react app created with command ( npx create-react-app simple-web-app)
+	
+10. docker attach : It forward input from our terminal directly to a specific container.
+	Ex : docker attach <container-id>
+	
+	
+Deploying this react application in AWS using CI tool (travis ci): ( do it practically )
+	- deployed in Elastic Beanstalk :  its a easiest way to get started with production Docker instances.
+		- Elastic Beanstalk is most appropriate when you're running exactly one container at a time.
+		- We can start up multiple copies of the same container, but its easiest way to run one single container.
+		- The benefit to Elastic Beanstalk is that it's going to automatically scale everything up for us.
+		- by default no port inside of the container gets exposed to the outside world, we have to very directly set up that port mapping ourselves. we need to expose a container port with Elastic Beanstalk (port mapping needs to be done).
+			Ex : in Dockerfile (code file : 97-exposing-gh-actions ) "EXPOSE 80" instruction.
+		- Elastic Beanstalk, when it starts up your Docker container, it's gonna look at this dockerfile for the "EXPOSE" instruction, and then whatever port you list in there is what Elastic Beanstalk mapped for incoming traffic.
+		- Once the code showed up over on Elastic Beanstalk, Elastic Beanstalk took all of our code, rebuilt the image and deployed it to a running web server. rebuild our images by Elastic Beanstalk was probably not a very good approach. insted we'll push the image to dockerhub, then let Elastic Beanstalk download the image from docker hub and deploy our application.
+	
+* Complex Project (Section 9 : dockerising multiple services ): 
+	Imp video : vid 126 environment variable with docker compose
+	- some environment variablesThey needs to be passed into this container when it is executed. Its possible via docker-compose.yaml 
+	- So when you specify an environment variable inside of a Docker Compose file, that information is not being encoded inside the image. the time when a container is created, a environment variable is set up inside of the container.
+	
+	- Different syntax to Specify the environment variable
+		1. VariableName=Value : This is gonna set up a variable inside the container at runtime of the container (docker run --> this step ). When we set up an environment variable inside of a Docker Compose file, we are setting up an environment variable that is applied at run time (when the container is started up).
+		
+		2. VariableName (just the variable name):  the value for this variable is going to be taken from your computer. it'll be taken from your machine at runtime and it's not gonna be saved along with the source code of your project or the Docker Compose file or anything like that.
+		
+	* we 're using the NGINX server as development server because, our application needs route the requests to different services(containers).Here the Nginx server is gonna look at all these different requests and decide on which backend service route the request to. Its basically used for routing the requests.
+	
+	* Any a request comes into Nginx, it's gonna look at the incoming request path. Based on the request path, it redirects request to different services
+	Ex : "/api" is in the route, then its redirect this requestover to the Express server(one container/service).
+		 "/" is in the route, if "/api" is not there then it directs that request to the React server (another service).
+		 
+	* In order to set up Nginx in this fashion (above example "/api" and "/") and give it a set of routing rules, we're gonna create a configuration file called "default.com" added to an Nginx image.
+	
+	* The services/containers on which NGINX redirect traffic to refers as upstream servers.
+	
+	* If your pusing for production, make sure that we have production versions Dockerfiles.
+	
+	* We can also keep the multiple copies of NGINX servers to serve our application, one for routing and another one for serving the  specifically to react application. because, react application should be served in production using preoduction ready server (ex:NGINX), not using development server.
+	
+	* for preparing production ready application(vid 144 : Travis Configuration setup) :
+		- we're building out the React project using the development Docker file (Dockerfile.dev), because only the development Docker file has all the source code required for running our tests.
+		
+	* In the Complex Project We don't have a single Docker file anymore. We have a couple of different folders and each of them has a separate Docker file. And so if we want to use this entire project directory to Elastic Beanstalk, So anytime we want to run multiple separate containers on Elastic Beanstalk at the same time, we need to creata a file called "Dockerrun.aws.json" Inside of our project directory because Elastic Beanstalk doesn't actually know how to work with multi-container environment.
+	
+	* Behind the scenes, when you tell Elastic Beanstalk to host a set of containers via "Dockerrun.aws.json", it's actually send that hosting to another service that is provided in AWS, called the Elastic Container Service (ECS).
+	
+	* If we want to use ECS saperately, we need to create files that are called task definitions, this file tells ECS how to run one single container. Each of these task definition files are very similar, almost identical to the container definitions of our Dockerrun.aws.json file. for more info search in chrome "ecs task definition documentation".
+	
+	- Dockerrun.aws.json : its a container definition file in json format contains configurations of 
+		- from where to pull all of our images
+		- what resources to allocate to each one of them
+		- how to set up some port mappings and some associated information.
+		
+	- The "Dockerrun.aws.json" is similar to "docker-compose.yaml"
+		- docker-compose.yaml : this file has directions on how to build an image.
+		- Dockerrun.aws.json : here we just specify how these build images (built and pushed to docker hub) to be used in AWS.
+	
+	AWS : 
+		- In every AWS region you get a different default VPC.
+		- to connect different services to each other we have to create a security group, It describes rules, which defines what different services/sources connect to different services running inside of your VPC.
+		ex: in our complex app, to connect to Elasti Cache Redis, and Postgres RDS with Elastic Beanstalk we're creating a security group.
+		
+	* Complex project : 
+		- The instance of Redis and the instance of Postgres, that are going to be serving data for our application, these will not be inside of the Elastic Beanstalk instance. Instead, we are going to rely upon two external services to fulfill all of our data needs for our application. we might choose to use these outside services rather than creating our own containers manually and using our own containers for housing Redis or our Postgres instances.
+		Because, we don't need think about
+			- scaling
+			- security 
+			- automated backups
+			- no need wo worry about restart the container without losing any data
+			- automatic logs generated.
+			- easier to migrate away, because it's completely decoupled from Elastic Beanstalk.
+			- No maintainance at all
+			
+- we can create and run containers using Dockerfile, So why do we need Docker Compose?
+	- Dockerfile builds one image. But real applications rarely run as a single container.
+	- Docker Compose runs multiple containers together as a complete application by handling networking, dependencies, and configuration in a simple YAML file.
+	
+	- Docker Compose solves below problem:
+		1. Runs multiple containers together
+			A single docker-compose up can start:
+				- web container
+				- database container
+				- redis container..etc.
+
+			All linked and working together.
+			
+		2. Easy service linkage (Networking)
+			Compose automatically:
+				- Creates a common network
+				- Connects services
+				- Resolves service names
+				
+		3. Simplifies configuration
+			Instead of long docker run commands with many flags, Compose allows simple YAML Much cleaner and reusable.
+			
+		4. Shared environment setup
+			You can define:
+				- volumes
+				- dependencies
+				- environment variables
+				- restart policies
+
+				All in one place.
+				
+		5. Reproducible local development
+			Developers can spin up entire environments with a single command — same behavior every time.
+			
+			
+		6. Orchestration of multi-container lifecycle
+			Compose handles:
+				- Start
+				- Stop
+				- Restart
+				- Dependency ordering
+			Example: start DB before app
+			
+Code commands while running ansible image :
+	Docker file :
+	------------
+	FROM alpine:3
+
+	RUN apk add --update --no-cache ansible bash openssh sshpass rsync py3-passlib
+
+	ENTRYPOINT []
+	CMD ["ansible", "--help"]
+
+	commands :
+		docker build -t ansible-image .
+
+		Optiona 1: 
+			run and attach the container terminal : docker run -it --name ansible-container ansible-image bash
+			or if bash is not available: docker run -it --name ansible-container ansible-image sh
+
+		Option 2:
+			create the container in the detached : docker run -d --name ansible-container ansible-image
+
+		once container is created and running , if you want to open bash again :
+		docker exec -it ansible-container bash
+
+		to restart stopped container : docker start ansible-container
+		
+		remove old stopped container : docker rm ansible-container
+				
+			
+KUBERNETES (k8'S) :
+====================
+	- In Our Complecx project deployed in Elastic Beanstalk : the scaling strategy for Elastic Beanstalk is, Rather than creating more copies of a single container, Elastic Beanstalk looks at that "dockerrun.aws.json" file and it spins up additional copies of the entire set of containers (duplicate copy of entire application). Here we have very limited control over what each container is doing. to solve this scenario "Kubernetes" is used to solve this entire scaling issue.
+	
+	- The docker don't have the flexibility to scale single containers (our pplication may consists of 5 different containers). Ex : we can't run different containers in different numbers from different images.
+	
+	- If you are planning on create an application that would just have one type of container, Kubernetes might not be the best solution for you.
+	
+	cluster : A cluster is the assembly of master, with one or more nodes.
+	
+	Node : A node, which is a virtual machine or a physical computer that is going to be used to run some number of different containers from different images in different numbers. each of these virtual machines, a copy of docker running.
+	
+	master : all these different nodes that get created are managed by something called a master. The master has a set
+			of different programs running on it, which controls what each of these different nodes is running at any given time.
+			we'll be giving some set of directions/commands to the master. The master receives that command and then ultimately run instructions to all of these different nodes.
+			Ex: we might say, "Hey please run five containers using the client worker image."
+			
+	what is KUBERNETES ?
+		Kubernetes is a system for running many different containers, so different types of containers, different numbers of containers over several different computers or virtual machines.
+	
+	Why KUBERNETES ?
+		if we had the need to scale up our application and run multiple different types of containers in different quantities.
+
+	- There is a very large distinction between using kubernetes in a development environment (as in on your local computer) and in a production environment.
+		Development Env : 
+			- In a development environment, we make use of Kubernetes by using a program called "minikube".
+			- minikube : Minikube is a command line tool whose sole purpose is to set up a tiny little Kubernetes cluster on your local computer. ( it's a program that is used to set up Kubernetes on your local machine). behind the scenes, it's going to create a virtual machine whose sole purpose is going to be to run some number of containers. It's uset to manage the virtual Machine/cluster itself.
+			
+			- TO interact with cluster created by minicube command, we'll use a program called "kubectl".
+			- kubectl : Kubectl is the program that is used to interact with a Kubernetes cluster and manage the containers in the node.
+			- We only make use of minikube in a local environment.
+			- we'll use "kubectl" in both local (Development env) and production.
+			
+		Production Env:
+			- When we start using Kubernetes in a production capacity, we very frequently make use of what are called "managed solutions".
+			- Managed solutions : Managed solutions are references to outside cloud providers, such as Google Cloud or Amazon
+				AWS, that will set up an entire Kubernetes cluster for you and takes care of a lot of very low level tasks that are required to get everything working the way you expect in a secure fashion.
+				
+				- if you're using Kubernetes on AWS, you would be making use of Amazon's Elastic Container Service with Kubernetes (EKS). - it's a managed solution.
+				
+				- if you're using Kubernetes on Google Cloud, you would be making use of Kubernetes Engine(GKE). -  its a managed solution.
+				
+			- UnManaged solution : You can also have the option to set up a Kubernetes cluster on your own as do it yourself option.
+			
+		- Installing Docker Desktop's built-in Kubernetes (instead of installing Minikube on Windows) is the best-supported and most recommended solution for running Kubernetes on Windows.
+		
+	To Run your project on K8s:
+		
+		- Kubernetes expecting all images to already be built (make sure that our image, specifically the multi-client image is already built and pushed up to Docker hub.)
+	
+		- Make one config file per object we want to create.(one config file to create our container). something that's going to essentially represent or contain the container.
+		
+		- we have to set up all that networking manually.
+		
+		Ex: to create a client project(webpage in previous project) we're creating 2 files 
+		client-pod.yaml and client-node-port.yaml
+		
+		- When we pass these above files to kubectl, its going to interpret both those files and create two objects out of each file.
+		
+		- In general the config files that we write are going to use to create objects.  The object is a reference to a thing that is going to be created inside of our Kubernetes cluster. The types of objects are : Pod, Services, StatefulSet, ReplicaController and etc..
+		
+		- These Objects we can create inside of our Kubernetes cluster that have very specific purposes to make our application work the way we expect.
+		- Every type of object has a slightly different purpose.
+		
+		Object Types :
+			Pod - A Pod is the smallest deployable unit in Kubernetes.
+				  A Pod can have one or more containers inside it (usually 1, but sidecar patterns may use 2+).
+			
+			Services - used to set up some networking inside of our Kubernetes cluster. It gives a stable way to access Pods 	
+						(because Pods keep changing).
+						
+			Deployment - A Deployment in Kubernetes is a controller object that manages the lifecycle and scaling of Pods.
+						A Deployment is a Kubernetes object that:
+							➡ Creates and manages ReplicaSets
+							➡ ReplicaSets maintain the desired number of Pod replicas
+							➡ Supports rolling updates and rollbacks
+							➡ Provides self-healing (recreates failed pods automatically)
+			
+			Volume : A Volume is a way to provide persistent storage attached to containers running inside Pods to read/write
+				data, and keep that data even if the container restarts.
+				Containers normally store data in their own filesystem, but that data disappears if the container restarts. A volume solves this problem by providing a storage location that lives beyond the container lifecycle.
+				
+			Secrets : securely store one or more pieces of information inside of your cluster. 
+					Ex: database password, API key, SSH key
+					It stores the secret piece of information that you do not want to have easily exposed to the outside world,
+					but you do want to make available to run in containers inside of your application.
+		
+		client-pod.yaml :
+		---------------------
+		apiVersion: v1			# Uses the core Kubernetes API version v1 for this object. Use the version based on the object 
+								type availability in that version.
+		kind: Pod				# indicates the type of object that we want to make
+		metadata:				# identifying information about the Pod object (pod)
+		  name: client-pod		# The object's name inside the cluster.(pod name)
+		  labels:				# Key–value labels attached to the Pod, used for grouping, selecting, or filtering by other K8s
+								objects
+			component: web 
+		spec:					# The object specification (customize this exactly how this object behaves.)
+		  containers:			# List of containers that will run inside this Pod.
+			- name: client		# The name of this container within the Pod.
+			  image: stephengrider/multi-client # Docker image the container will run.
+			  ports:
+				- containerPort: 3000	# the port that is mapped up to the multi-client image above.used mainly for 
+											documentation and by other K8s components like Services for port mapping.
+										
+	- The "name" and the "kind" are our unique identifying tokens for any object that we create.
+		anytime that we want to make an update to an existing object, always leave the name and the kind untouched, and change the rest of the configuration file, and then feed it all into kubectl,and Master is going to automatically find the existing object and make updates to it.
+		
+	-  if you change the The "name" and the "kind", the master will create a brand new object with that name and that kind.
+		 It won't update an existing object, it'll attempting to create a brand new one.
+
+	- To install minikube in Docker desktop : minikube start --driver=docker
+		- it created a new virtual machine on your computer. the virtual machine is now running on your computer as a "node", which is used by Kubernetes to run some number of different objects.
+		
+	- When we run the config with kubectl (kubectl client-pod.yaml), it'll create a pod inside the node
+	
+	- The smallest thing that we're deploy in K8s is a pod (eventhough if you want to run sigle container, it should be in a pod). We cannot deploy individual containers by themselves as we were deploying with Docker-compose.yaml
+	
+	- A pod can run one or more containers inside of it.
+	
+	- the purpose of a pod is to allow the grouping of containers with a very similar purpose, we need to deploy containers in a same pod if they have a very discreet, very tightly coupled relationship and must be executed with each other.
+	
+	client-node-port.yaml
+		------------------------
+		apiVersion: v1	# Uses the core Kubernetes API version v1 for this object.
+		kind: Service	# Tells Kubernetes you are creating a Service object.
+		metadata:		# identifying information about the Pod object (Service)
+		  name: client-node-port	# The object's name inside the cluster to identify.(Service name)
+		spec:			# Defines the specification/configuration of the Service.
+		  type: NodePort	# subtype of Serive to use for
+		  ports:		# List of ports that this service will handle
+			- port: 3050	# Internal port on which this Service is reachable within inside the cluster from other services.
+			  targetPort: 3000	# The port on the Pod where the actual application is running (container port).(Service forwards 
+									traffic: 3050 → 3000)
+			  nodePort: 31515	# The fixed external port on each Kubernetes node.( This port is used to access our app using
+									browser <NodeIP>:31515, which is exposed outside world, Its always be a number between 30,000 and 32,767. its optional, and we don't use it in production env)
+		  selector:		# Defines which Pods this service sends traffic to. When a service and a pod share the same label, the service 	
+							uses its "selector" to find those pods. So, any request that comes to the service is automatically routed to 
+							the pods with that label, using the specified port.
+			component: web	# The label used to match Pods. (Service will forward traffic only to Pods with: component=web)
+							It provides provide access to podsc which this service can access to.
+			
+		- The service object type is used to  create networking inside of a Kubernetes cluster.
+		
+		- The service object has the following sub types, which indicates the type of service want to create:
+			1. ClusterIP : Only internal access — not reachable directly from the internet.
+				Usecase - Internal communication between microservices.
+				you can think of its like "Only apps inside my Kubernetes cluster can talk to me."
+			
+			2. NodePort : The purpose of a NodePort service is to expose a container to the outside world( able to allow you to
+						open up your web browser and access that running container), its only good for development purposes.
+						- it set up a communication layer between the outside world and the container running inside of that pod.
+						you can think of its like "You can reach me from outside the cluster, but you must know the Node IP & Port."
+						Allows access from outside using: NodeIP:NodePort
+						
+			3. LoadBalancer : Available on cloud platforms (AWS, GCP, Azure).
+							  Creates a Public Cloud Load Balancer and routes to NodePorts internally.
+							  its a legacy way of getting some amount of traffic into your application/cluster.load balancers are a little bit dated as a service in the world of Kubernetes, even the newer feature of ingress is still using a load balancer behind the scenes.
+							  you can think of its like "I have my own public IP. I am production-ready."
+			
+			4. Ingress : The users can access our application is via Ingress service. Traffic is come into Ingress and then once 
+						 traffic has come in cluster IPs will be accessible only through the Ingress service.
+						 Ingress sits in front of ClusterIP services.
+						 Needs an Ingress Controller (NGINX, Traefik, HAProxy, Istio Gateway, etc.)
+						 ingress is the newer, and supposedly better way of getting traffic into your cluster.
+						 Flow is as below : 
+							user ---sends HTTP/HTTPS request---> Ingress ---routes the traffic to---> ClusterIP
+			
+			When to Use What?
+				ClusterIP : Most common — internal microservice-to-microservice communication
+				NodePort : Simple external access, dev/test environments
+				LoadBalancer : Production external access on cloud
+			
+		- Every single node or every single member of a Kubernetes cluster that we create has a program on it called the kube-proxy. The kube-proxy is essentially the one single window to outside world. So anytime that request comes into a node, it's going to flow through the kube-proxy. This proxy inspect the request and decide how to route it to different services or different pods that wecreated inside of node.
+		kube-proxy --> NodePort service --> Pod --> container
+		
+		- kubectl command :
+			kubectl apply -f <file-name> :  creates the objects that are specified in configuration file in k8s
+			Ex: 
+				kubectl apply -f client-pod.yaml
+				kubectl apply -f client-node-port.yaml
+			
+			kubectl get <object-type>
+			Ex: 
+				kubectl get pods : prints all the different pods that have been created.
+				kubectl get services : print ll the different services that have been created.
+				kubectl get deployments : print ll the different deployments that have been created.
+				kubectl get nodes : lists the availabe nodes in cluster
+				kubectl get all : lists all the resources at this movement.
+			
+		- NOTE(IMP) : when accessing our container(our application) via browser, that is running on that Kubernetes node VM created by Minikube, this is not addressed by localhost. all the ports that exist inside this node VM right here are not available on localhost. 
+		
+			In order to access this VM, we need to actually ask Minikube for the IP address that was assigned to this virtual machine when it was created on your computer.
+			
+			virtual machine that was created on your machine has its own IP address, and you need to visit that IP addressin order to access any of the different services/pods.
+			
+			to get access that IP address, run "minikube ip", which returns the VM IP address.
+			
+			anytime that you want to access some application that is running inside of Minicube or inside that virtual machine or inside of your Kubernetes cluster in development environment, you are not going to use localhost, we'll be using the IP returned by the command "minikube ip".
+			you need to use something like this "192.168.49.2:31515". but for docker desktop users can be accssed by : "http://localhost:31515/"
+			
+		- if we manually delete, or if one those containers inside that pod crashes, it appears that container will automatically gets restarted for us for free.
+		
+		MASTER : In a Kubernetes cluster, the control plane (master node) runs several key components that manage and control the worker nodes. These components make global decisions, schedule workloads, monitor cluster state, and expose the Kubernetes API.
+		
+		Main Kubernetes Control Plane Components (Master Node):
+			1. kube-apiserver : Central management point. Exposes the Kubernetes API. All commands (kubectl, controllers, nodes) talk to this API server. This is 100% responsible for monitoring the current status of all the different node inside of your cluster and making sure that they are essentially doing the correct thing.
+			
+			2. etcd	 : Key-value database for storing cluster state (desired and current). Highly available and consistent.
+			
+			3. kube-scheduler : Decides which node a Pod should run on based on resource requirements, taints/tolerations, affinity rules, etc.
+			
+			4. kube-controller-manager : Runs controllers that watch cluster state and try to move it toward the desired state (node controller, deployment controller, etc.).
+			
+			5. cloud-controller-manager (optional)	Integrates Kubernetes with cloud provider APIs (manages load balancers, storage volumes, routes, etc.).
+			
+		Additional Supporting Components (often installed in master)
+
+			1. DNS (CoreDNS) : Provides DNS-based service discovery within the cluster.
+			
+			2. Cluster Networking/CNI plugin : Controls pod networking between nodes (Calico, Flannel, Cilium, Weave Net etc.)
+			
+		Processes Running on Worker Nodes :
+
+			1. kubelet : Primary agent that runs on worker nodes. Communicates with API server, creates/monitors pods and containers.
+			
+			2. kube-proxy : Maintains network rules on nodes to enable service access and load balancing.
+			
+			3. Container runtime : Runs containers (Docker, containerd, CRI-O, etc.).
+			
+		Control Plane (Master)
+		├── kube-apiserver
+		├── etcd
+		├── kube-scheduler
+		├── kube-controller-manager
+		└── cloud-controller-manager (optional)
+
+		Worker Nodes
+		├── kubelet
+		├── kube-proxy
+		└── Container runtime (Docker/containerd/CRI-O)
+		
+		- How Object is deployed ? :
+			"client-pod.yaml" ---file passd to---> "Master(kube-apiserver)" ---get the status of containers and indicate to nodes to meet desired count---> "nodes" ---nodes reach out to docker hub ---> "pull image" ---creats container ouf of this image---> "update the ststus to master".
+			
+	- To replicate the copies multiple container in a node, the docker running inside of each of these different nodes
+	is going to reach out to docker hub, and finds the respective image and downloading that image and store it on some local image cache inside each of these nodes, Then each node is going to use that image to create a new container out of it.
+	
+	- The Master continuously watching each of these different nodes. if any container/object got issue/crashed, it'll automatically attempt to recreate them. We don't directly reachout to nodes, we're always going to use the kubectl command line tool, which is going to send all of our commands off to the master.
+	
+	IMP points :
+		- Kubernetes is a system to deploy containerized applications.
+		
+		- A node is a individual machine, that run some number of containers or objects.
+		
+		- Master is a machine (or virtual machine) with  set of programs to manage nodes.
+		
+		- everything that goes on inside the nodes.
+		
+		- Kubernetes didn't build our image, it got them from somewhere (Ex:dockerhub)
+		
+		- By default, The master decides where to run each container, each node can run a dissimilar set of containers. But we
+			can configure them where to deploy.
+		
+		- To deploy something we need to pass ".yaml" configuration file over to the master, it'll take care of the rest.
+		
+		- The Master works constntly to meet your desired state of configuration file.
+		
+	Deployment Approaches(how to deploy):
+		1. Imperative Deployment : 
+			
+			- Imperative commands directly instruct Kubernetes to create, update, or delete resources. Similar to running shell commands that execute immediately.
+			
+			- you need to figure out the way to get the current status and issue series of commands to acheive the desired state.
+			
+			- Imperative commands directly perform actions on the cluster using kubectl
+			
+			✔ Pros
+				- Fast and simple for quick tasks.
+				- Good for learning and experiments.
+
+			❌ Cons
+				- Hard to track changes.
+				- Not ideal for production or GitOps
+				
+			Ex: 
+				Create a deployment		: kubectl create deployment nginx-depl --image=nginx
+				Scale a deployment 		: kubectl scale deployment nginx-depl --replicas=4
+				Update container image	: kubectl set image deployment/nginx-depl nginx=nginx:1.25
+				Delete a deployment		: kubectl delete deployment nginx-depl
+
+			
+		2. Declarative Deployment (YAML/Helm/Kustomize): 
+		
+			- You write the desired configuration (usually YAML), and apply it. Kubernetes ensures the object matches your declared state.
+		
+			- Best approach. Uses the ".yaml" configuration file to acheive your desired state. simply by sending this configuration file to master, let master figureout rest of the things.
+			
+			- It involves storing desired state in YAML/Helm/Kustomize manifests and applying them so Kubernetes maintains that state. Declarative is preferred for production and GitOps workflows.
+			
+			✔ Pros
+				- Ideal for production, CI/CD, GitOps.
+				- Version control friendly.
+				- Enables repeatability and collaboration.
+
+			❌ Cons
+				- Slightly more initial effort.
+				- Need to manage YAML files.
+				
+			Ex:
+				client-pod.yaml
+				-------------------
+				apiVersion: v1
+				kind: Pod
+				metadata:
+				  name: client-pod
+				  labels:
+					component: web
+				spec:
+				  containers:
+					- name: client
+					  image: stephengrider/multi-client
+					  ports:
+						- containerPort: 3000
+						
+			Apply configuration		: kubectl apply -f client-pod.yaml
+			Delete configuration	: kubectl delete -f client-pod.yaml
+
+
+				
+	- kubectl describe <object-type> <object-name> : to get detailed information about an object inside of our cluster.
+		Ex : 
+			kubectl describe pod client-pod
+			kubectl describe service client-node-port
+			
+		It also displays the Events occurred over the life cycle of the pod.
+		
+	- If you update the config file with a new name(client-pod.yaml --> client-pod-new.yaml) and apply it to the cluster, Here only file name changed, not any configurations, it won't create the new pods.
+	
+	- If you update the config file with a new name(client-pod.yaml --> client-pod-new.yaml) or keep the same name and change the "name" (metadat-->name) apply it to the cluster, Here it'll create a brand new pod with given config.
+	
+	Deployment:  
+		A deployment is a Kubernetes object that is used to maintain a set of identical pods. deployment is going to make sure that every single pod in its set that is always running the correct configuration, and is always in a runnable state.
+		
+		- a deployment is very similar in nature to a pod. we can use either deployments or pods with Kubernetes to run containers for our application.
+		
+	Pod vs Deployment:
+		Pod :  
+			- we're only go with multiple containers if they have very tight integration with each other.
+			- Good for development environment. 
+			- Rarely used in Production environment, because of limitations while updating some parameters.
+	
+		Deployment:
+			- run and manage a set of identical pods(object) (one or more).every pod is going to be running the exact same set of
+				containers with identical configuration.
+			- monitors the state of each pod(object) and make sure that every pod is running the container successfully inside 
+				of it. If any pod(object) happens to crash for any reason, the deployment is going to automatically attempt to restart that pod or completely recreate it in a fresh new state.
+			- Good for Development and production environment
+			
+	- when we create a deployment object, its attached with "pod template".
+	- "Pod template" : its a little block of configuration file, which describes that any pod created by this deployment is 
+		supposed to look like.
+		
+	client-deployment.yaml
+	----------------------
+	apiVersion: apps/v1			# Specifies the API version used for this object
+	kind: Deployment			# creating deployment object which manages Pods and ReplicaSets.
+	metadata:					# Section that contains identifying data about the deployment.
+	  name: client-deployment	# The name of this Deployment
+	spec:						# Describes the desired state or configuration of this Deployment.
+	  replicas: 1				# Kubernetes should run exactly 1 replica (pod) of this application.
+	  selector:					# Defines how Kubernetes knows which Pods belong to this Deployment.
+		matchLabels:			# Pods must have matching labels to be managed by this Deployment.
+		  component: web		# The label used to match Pods. Any Pod with label component=web is controlled by this 
+									Deployment. (@@Match@@)
+	  template:					# Pod template — describes what Pods created by this Deployment should look like.
+		metadata:				# Labels for the Pods. These must match the selector above.
+		  labels:				# Actual key/value label assigned to Pods.
+			component: web		# Pods will include this label, allowing the Deployment to manage them. provide a label
+									that matches the selector (@@Match@@)
+		spec:					# Specification of containers inside the Pod.
+		  containers:			# List of application containers in the Pod (only one here).
+			- name: client		# Name of the container inside the Pod.
+			  image: stephengrider/multi-client	#Docker image to pull and run for this container.
+			  ports:			# List of container ports exposed.
+				- containerPort: 3000	# The container will listen on port 3000 (useful for services).
+	
+	- once the pod is created from deployment it needs to a handle on that, which is the exact purpose of that "selector" field above. To get a handle on that newly created pod, the deployment is look for objects with a label of "component" (web).
+		- selector->matchLabels->component ---giving us a handle on--> metadata->labels->component.
+		
+	- Every single pod that we create gets its own IP address assigned to it. use the below command to get the node ip. 
+	  Recreation of pod will get the new ip address.
+		> kubectl get pods -o wide
+		
+	- In Development environment updating the IP address all the time inside your browser would be a big pain. And that's why we make use of these "service objects". This service is going to watch for every pod that matches its selector(in Service object creation spec->selector->component:web). the service is going to look for every pod with that selector and then automatically route traffic directly over to it. eventhough the IP changed, our service still points to the correct pod.It gives consistant access to set of pods.
+	
+	- Deployment object creates pod or set of pods, to see the deployment objects : kubectl get deployments 
+	- To list all the pods created by this deployment us this command : kubectl get pods 
+	
+	- To get the latest image from docker hub and recreate our pods via deployment object with latest version, is bit challenging because,
+		- Th dockerhib has the image with latest change, which is fine and when we're mentionining the image without tag, we're always getting the latest image.
+		- When you run kubectl apply with an unchanged YAML file, Kubernetes does nothing because the configuration matches the existing state (unchanged .yaml file). It will report that the configuration is unchanged.
+		best solution in production and development environments:
+		
+		Prod env:
+			1. Change the YAML (Git-managed config) – Best Practice: Update image tag, env var, resource, or even just a 
+				meaningful annotation in the Pod template
+				Ex :
+					metadata:
+					  annotations:
+						release-id: "2025-11-17-01"
+						
+				Then apply the command : kubectl apply -f deployment.yaml
+				
+				Why it’s best in prod:
+					- Fully GitOps-friendly – every change is traceable in Git.
+					- Auditable: you know who changed what and why.
+					- Rollbacks are easy: just revert Git and re-apply.
+					- No surprise deletion/recreation of resources.
+			
+			2. kubectl rollout restart – Safe and common in prod :
+				command : kubectl rollout restart deployment <deployment-object-name>
+				When to use:
+					- You’re restarting after config external to YAML changed (e.g., Secret/ConfigMap or external dependency).
+					- You want a “bounce” of Pods without config changes.
+
+			
+		Dev env:
+			1. kubectl rollout restart – Best everyday tool
+				command : kubectl rollout restart deployment <deployment-object-name>
+				Why:
+					-Super fast way to restart Pods after:
+					- Code rebuild with same tag (naughty but common in dev).
+					- Dependency changes.
+					- No need to touch YAML.
+				
+			2. Quick kubectl patch or annotate:
+				command : kubectl annotate deployment client-deployment dev-redeploy="$(date)"
+														# or
+				kubectl patch deployment client-deployment -p \
+				'{"spec": {"template": {"metadata": {"annotations": {"dev-redeploy":"now"}}}}}'
+				
+				why:
+					- Fast feedback loop.
+					- You don’t always care about Git history for every tiny tweak.
+					- Easy to script or try things out.
+					
+			3. Modify YAML and kubectl apply (good habit)
+				Even in dev, it’s nice to:
+				- Practice GitOps-style workflows.
+				- Keep manifests in sync with what you’re testing.
+				
+			4. kubectl apply --force / kubectl replace – Okay only for quick resets
+				Use if:
+					- You’ve totally messed up a resource and want a clean slate.
+					- Dev cluster / namespace only.
+
+				But remember:
+					- May cause momentary downtime.
+					- Not how things should be done in prod.
+					
+			5. kubectl set image : is an imperative command used to update the container image of a running Kubernetes workload 
+									without editing the YAML file manually.
+				Use kubectl set image when:
+					✔ You built a new container image tag and want to roll it out quickly
+					✔ You are doing CI/CD scripting
+					✔ You are testing changes in a non-prod environment
+				Avoid it in production if you rely on GitOps because Git source will not reflect the change.
+				command : kubectl set image <object-type>/<object-name> <container-name>= <new-image-to-use>
+					  Ex:  kubectl set image deployment/client-deployment client=stephengrider/multi-client:v2
+
+		🚫 What to Avoid in Production (unless you know exactly why):
+			
+			❌ kubectl apply --force -f ...
+
+				- Can delete and recreate objects → might cause downtime.
+
+				- Breaks stable object identity (UID, history, IPs, etc.).
+
+			❌ kubectl replace -f ...
+
+				Also deletes & recreates → not rollout-aware.
+
+				Ignores nice rolling update guarantees that Deployments provide.
+
+			⚠️ kubectl patch / kubectl annotate directly in prod
+
+				Okay in emergencies, but:
+
+				Drift from Git: live state ≠ repo state.
+
+				Harder to audit & reproduce.
+				
+
+* kubectl logs <pod-name> : To get the logs of pod in k8s.
+
+* kubectl exec -it <pod-name> : to start up a shell of pod.
+
+* you cannot delete individual containers inside a Pod.
+Containers inside a Pod are not managed separately—they are part of the Pod lifecycle. So, to remove all containers, you must delete the Pod itself.
+	- Delete Pods belonging to a Deployment:
+		kubectl delete pod -l app=<label-value>
+		Ex : kubectl delete pod -l component=web
+	
+	- Delete the Pod(s) by name:
+		kubectl delete pod <pod-name>
+		
+* Replace the pods : Restart the Deployment (also replaces Pods)
+	- kubectl rollout restart deployment <deployment-name>
+	Ex: kubectl rollout restart deployment client-deployment
+	
+* Not possible in Kubernetes :
+	There is no command like: kubectl delete container ...
+	Because containers inside a Pod are not independently managed.
+	
+
+Run the complex project in k8s :
+	- we need to write configuration file(.yaml) for each of the components, then we put together all these config files,
+	and test everything locally on minikube. So, we're going to make sure that everything works locally first as our development environment. then push it to production.
+	
+	- To apply all the configurations at same time you can use the directory name instead of file name.
+		> kubectl apply -f <directory-name>
+		
+		Ex: lets assume all our configurations are under k8s directory, use the below command.
+		> kubectl apply -f k8s
+		
+	- After applying "kubectl" to the directory/single file, make sure to check the logs (kubectl logs <pod-name>)
+		to confirm if any erros.
+	
+* We can maintain a single config (.yaml) file by consolidating all the different individual config files (Ex: client-deployment.yaml and client-service.yaml etc..) by making 3 dashes ( --- ) saperator. its completely optional.
+and 
+
+Note (while using database images as container) :
+* while using postgres official image in our project we need postgres PVC (persistent volume claim). Its similar to volumes in Docker. POSTGRES is a database, it takes in some amount of data from application and save all of its data inside the file system maintained by the container,. if any reason this POSTGRES container/pod crashes, then everything stored data is lost, including the file system that exists inside of the POSTGRES container. To solve this we Volumes.
+
+* we can make use of volumes (host machine) to have a consistent file system, that can be accessed by a database such as Postgres. by using this for any reason the pod crashed and recreated it gets access to the exact same volume with  all of the data that had been written by the previous copy of postgres.
+
+* If we created 2 replicas of Postgres, these two pods that might be accessing the same volume. Having two different databases access the same file system without them being aware of each other and have them very distinctly cooperating with each other, is a disaster. many other databases, you're gonna find the same problem. To solve this situation you have to go through some additional configuration steps.
+
+* menaing of "volume" in Generic container Terminology : 
+	Some type of mechanism that allows the container to access a file system outside of itself.
+
+* Volumes in Kubernetes: 
+	A volume is a object that allows a container to store data at the pod level(inside the pod). it is Pod-level storage whose lifecycle is tied to the Pod.
+	- When we create a volume in Kubernetes, we are creating a little kind of data storage pocket that exists or is tied directly to a very specific pod.
+	- if the pod itself recreated/terminated/deleted, the volume dies and goes away as well. So, a volume in Kubernetes will only survive container restarts inside of a pod.
+	- so this kind of volume is really not appropriate for storing data for a database.
+	- Good for :
+		🔹 Temporary storage
+		🔹 Sharing data between multiple containers in the same Pod
+
+	- Example use cases:
+		🔹 Two containers share logs
+		🔹 Temporary caching
+		🔹 ConfigMap / Secret mounted as volume
+	
+	
+	along with this volume we also have 2 other types of data storage mechanisms "Persistent Volume Claim" and "Persistent Volume".
+	
+	* Persistent Volume(PV) : its a long term durable storage that is not tied to any specific pod or any specific container.
+		its created as Cluster-level storage that lives beyond the lifecycle of any Pod. PV is managed by the cluster administrator (or dynamically created by StorageClass).
+		Typical storage backends: AWS EBS, EFS or Local node disk.
+		✔ PV is cluster-scoped and Available to all namespaces (until bound)
+		
+		* inside of a Kubernetes cluster,we might have some number of persistent volumes that have been created ahead of time. These are actual instances of hard drives, that can be used right away for storage. Any persistent volume that is created ahead of time, inside of your cluster, is something that we refer to as "statically provisioned".
+	
+		* we also had a another option that could have been created on the fly. So this is where referred to you as a "dynamically provisioned". persistent volume. it's only created when you putting together your pod, ask for it. It won't be created until you went ahead and asked for it.
+		
+	* Persistent Volume Claim (PVC) : Its a user request for storage while creating Pod (like asking for a disk).this PVC is availabe until its released. PVC is created at the Namespace level, NOT at the cluster level. 
+		✔ PVC is namespace-scoped, Belongs to a specific namespace.
+		PVC asks for:
+			Size (e.g., 10Gi)
+			Access type (ReadWriteOnce, ReadOnlyMany, etc.)
+			StorageClass (optional)
+			
+		PVC Access Modes: Access Modes define how a volume can be mounted by Pods
+			1. ReadWriteOnce(RWO): Volume can be read/write by a single node
+			2. ReadOnlyMany (ROX): Volume can be read-only by multiple nodes at the same time
+			3. ReadWriteMany(RWX): Volume can be read/write by multiple nodes at the same time 
+			
+	* when using kubernetes in our local environment, we are setting up this persistent volume claim without mentioning a storage class name, because we are relying upon the default(our local computer hardware space). once we moded this to cloud(Ex:EKS), the provider has some options availabe for example AWS Elastic Block store.
+	Ex:
+		database-persistent-volume-claim.yaml
+		---------------------------------------
+		apiVersion: v1
+		kind: PersistentVolumeClaim
+		metadata:
+		  name: database-persistent-volume-claim
+		spec:
+		  accessModes:
+			- ReadWriteOnce
+		  resources:
+			requests:
+			  storage: 10Mi (Ki-KB, Mi-MB,Gi-GB)
+
+	* How to pass Environment variable to pods (video : 232)?
+		ex: worker-deployment.yaml
+		---------------------------
+		apiVersion: apps/v1
+		kind: Deployment
+		metadata:
+		  name: worker-deployment
+		spec:
+		  replicas: 1
+		  selector:
+			matchLabels:
+			  component: worker
+		  template:
+			metadata:
+			  labels:
+				component: worker # Any key valu pair you can specify, no need to mention perticularly "component: woker"
+			spec:
+			  containers:
+				- name: worker 
+				  image: rallycoding/multi-worker
+				  env:
+					- name: REDIS_HOST
+					  value: redis-cluster-ip-service
+					- name: REDIS_PORT
+					  value: '6379'
+		strategy:				# This tells Kubernetes how the deployment should update pods.
+			type: RollingUpdate # This means update pods one by one, so the application does not go down.
+			rollingUpdate:		# This section defines extra rules for how the rolling update should behave
+			  maxSurge: 1		# This means Kubernetes can create one extra pod temporarily during the update.
+									Example: if you have 2 running pods, it can create a 3rd pod for a short time.
+			  maxUnavailable: 1	# This means at most one pod can be unavailable (down) during the update.
+									Example: if you have 2 pods, only one can be replaced at a time.
+			  
+	- The "strategy" block above explanation :
+		RollingUpdate ensures zero downtime during deployment.
+		If we have two replicas and a new image is available, Kubernetes replaces the pods one by one.
+		It first deletes one pod, creates a new one with the updated image, checks if it is working, and only then replaces the second pod.
+		This way, the application keeps running without going down.
+
+		
+	
+	* how to manage secrets(password) inside of our Kubernetes cluster ?
+		Ex: postgress password 
+		- Here we do not want to write out our password in plain text and store inside of our config file.
+		- To secure the password, we're going to use a new type of object inside of Kubernetes called "Secrets".
+		- Here, we'll run a imperative command (that means that we're going to have to run command locally) .that's going to create the secret for us. instead of config file (.yaml)
+		- In production env: we create the secret manually in the production environment as well.
+		command 	: kubectl create secret generic <secret-name> --from-literal key=value
+		Explanation :
+			create	- imperative command to create a new object 
+			secret	- type of object 
+			generic	- type of secret 
+			<secret-name> - name of the secret, later reference in a pod config.
+			--from-literal - means that we're going to write out the information to be stored inside the secret into a fileand 
+				then load up all that secret data from the file. So because we are using "--from-literal", so adding our information as a key value pair at the very end of the command.
+			key=value - key value pair of secret information.
+			
+			types of secret :
+				1. Opaque (Generic key–value secret.) : used for app credentials, tokens, config values.
+				Ex: kubectl create secret generic my-secret --from-literal=username=admin --from-literal=password=pass123
+				
+													Or from a file
+													
+					kubectl create secret generic my-secret --from-file=./config.txt
+
+				
+				2. docker-registry: Used for pulling images from a private Docker registry (DockerHub, ECR, GCR, etc.)
+				Ex: kubectl create secret docker-registry regcred \
+					  --docker-username=myuser \
+					  --docker-password=mypass \
+					  --docker-email=my@email.com \
+					  --docker-server=https://index.docker.io/v1/
+					  
+				3. tls: Stores TLS certificates and keys (used for HTTPS/Ingress).
+				Ex: kubectl create secret tls tls-secret \
+					  --cert=server.crt \
+					  --key=server.key
+					  
+				4. Basic Auth Secret : Stores username/password in special format.
+				Ex: kubectl create secret generic my-basic-auth \
+					  --type=kubernetes.io/basic-auth \
+					  --from-literal=username=admin \
+					  --from-literal=password=pass123
+					  
+				5. SSH Auth Secret: Stores SSH private key.
+				Ex: kubectl create secret generic ssh-key-secret \
+					  --type=kubernetes.io/ssh-auth \
+					  --from-file=ssh-privatekey=~/.ssh/id_rsa
+					  
+				6. Service Account Token Secret: Automatically created by Kubernetes normally, but can be created manually.
+				Ex: kubectl create secret generic my-sa-token \
+					  --type=kubernetes.io/service-account-token \
+					  --from-literal=token=<jwt-token-here>
+
+			* To confirm the stored secret use the below command :
+				> kubectl get secrets
+	
+	* In our project 
+		- we used We are going to be used an Nginx ingress.
+		- Nginx ingress is a project called "ingress-nginx", this is a community-led project, means it is a part of the official Kubernetes organization. --> we use this one.
+		- in addition to this "ingress-nginx", that does almost the exact same thing, with almost an identical name called "kubernetes-ingress". is also an Nginx based ingress. It is a project led by the company called Nginx.
+		
+		- IMP : setup of "ingress-nginx" changes depending on your environment (local, GC, AWS, Azure).
+		
+		- "ingress-nginx" is gonna create a single deployment, whose job is to both read in the ingress configm and 
+			simultaneously create a pod that meets all of those different routing rules.
+			
+	- In General the "ingress-nginx" project is not actually gonna send traffic over to the "clusterIP" service, anytime we get a incoming request to the ingress-nginx pod, the ingress-nginx pod is going to actually route the request directly to one of these different pods, completely bypassing that cluster IP service. eventhough the "clusterIP" service does still exist and it still is working. reason that this is done because to features like "sticky sessions" ( we sometimes want to make sure that if one user sends two requests to our application, we want to make sure that both those requests go to the exact same server)
+		
+	* Every config file(.yaml) for creating Pods, Deployments, Services, when we feed thses into kubectl and that creates object (Pod Object, Deployment Object, Service Object). These object are called "controllers". In Kubernetes, a controller is any type of object that constantly works to make some desired state of ypur configuration will get created inside of our cluster.
+	
+	Ex: 1. deployment.yaml --pass it to kubectl---> deployment controller -->this controller constantly watching and creates a 
+			desired state we defined in our configuration.
+		2. service.yaml --pass it to kubectl---> service controller -->this controller constantly watching and creates a 
+			desired state we defined in our configuration.
+		3. ingress.yaml --pass it to kubectl---> ingress controller -->this controller constantly watching and creates a 
+			desired state we defined in our configuration.
+			
+	* to use "ingress-nginx", we need to setup that in our local machine. then create a config file(.yaml) for the same to create an object, to implement this routing rule set.
+	
+	Ex: ingress-service.yaml (video: 247)
+	------------------------
+	apiVersion: networking.k8s.io/v1
+	kind: Ingress
+	metadata:
+	  name: ingress-service
+	  annotations:
+		nginx.ingress.kubernetes.io/use-regex: 'true'
+		nginx.ingress.kubernetes.io/rewrite-target: /$1
+	spec:
+	  ingressClassName: nginx
+	  rules:
+		- http:
+			paths:
+			  - path: /?(.*)
+				pathType: ImplementationSpecific
+				backend:
+				  service:
+					name: client-cluster-ip-service
+					port:
+					  number: 3000
+			  - path: /api/?(.*)
+				pathType: ImplementationSpecific
+				backend:
+				  service:
+					name: server-cluster-ip-service
+					port:
+					  number: 5000
+
+	Explanation:
+		apiVersion: networking.k8s.io/v1
+			Specifies the Kubernetes API version used for Ingress.
+			This is the current stable API for Ingress objects.
+			
+		kind: Ingress
+			Defines the object type.
+			Here, you are creating an Ingress, which routes external HTTP/HTTPS traffic to internal services.	
+		
+		metadata:
+			Metadata about the Ingress object (name, annotations, labels).
+			
+		name: ingress-service
+			The name of this Ingress resource.
+			
+		annotations:
+			xtra configuration specific to the Ingress Controller (NGINX in this case).
+			
+		nginx.ingress.kubernetes.io/use-regex: 'true'
+			Enables regular expression matching in paths.
+			This allows patterns like /(.*) or /api/?(.*).
+		
+		nginx.ingress.kubernetes.io/rewrite-target: /$1
+			Rewrites the URL path before sending it to the backend service.
+			Rewrite rule removes /api prefix before forwarding.
+			Example:
+				Request: /api/users
+				Regex captures users → $1 = users
+				Backend receives: /users
+		
+		spec:
+			The main configuration for routing rules.
+			
+		ingressClassName: nginx
+			Tells Kubernetes to use the NGINX Ingress Controller for this Ingress resource.
+			If you have multiple ingress controllers, this chooses the right one.
+			
+		rules:
+			Defines routing rules for HTTP traffic.
+			
+		- http: --> First Rule (Frontend)
+			HTTP rule block.
+			
+		paths:
+			List of paths to match.
+			
+		- path: /?(.*)
+			Optional /
+			Capture everything that follows, 
+			This means: Matches ALL paths, Routes to frontend service
+			
+		pathType: ImplementationSpecific
+			Means the controller (NGINX) will interpret the path (supports regex).
+			Required when using regex-based paths.
+			
+		backend:
+			Defines the service to send traffic to.
+			
+		service:
+			The service details.
+			
+		name: client-cluster-ip-service
+			Incoming requests go to this service (frontend).
+			
+		port:
+			Service port mapping.
+			
+		number: 3000
+			The service’s port to which requests are forwarded.
+			
+		- path: /api/?(.*) --> Second Rule (Backend API)
+			Matches:
+				/api
+				/api/
+				/api/users
+				/api/products/123
+				Anything after /api is captured in (.*)
+				Will be rewritten using $1.
+				
+		pathType: ImplementationSpecific
+			Same as above — controller handles the regex behavior.
+			
+		backend:
+			Traffic that matches /api/... goes here.
+			
+		service:
+			name: server-cluster-ip-service
+			API requests go to this backend service.
+		
+		port:
+			number: 5000
+			API service listens on port 5000.
+			
+			
+		Visual Diagram of above ingress-service.yaml configuration:
+		--------------------------------------
+					  ┌───────────────────────────┐
+                      │        External User       │
+                      │   (Browser / API Client)   │
+                      └──────────────┬─────────────┘
+                                     │  HTTP Request
+                                     ▼
+                       ┌───────────────────────────┐
+                       │     Ingress Controller     │
+                       │         (NGINX)            │
+                       └──────────────┬─────────────┘
+                          Routes based on URL path
+      ┌──────────────────────┴───────────────────────────┐
+      │                                                  │
+      │                                                  │
+      ▼                                                  ▼
+
+┌───────────────────┐                             ┌─────────────────────┐
+│  Frontend Rule     │                             │   Backend Rule      │
+│ Path: /?(.*)       │                             │ Path: /api/?(.*)    │
+│ Rewrites: /$1      │                             │ Rewrites: /$1       │
+└─────────┬──────────┘                             └──────────┬──────────┘
+          │ Forward to service                                  │ Forward to service
+          ▼                                                     ▼
+
+┌───────────────────────────────┐               ┌───────────────────────────────┐
+│ client-cluster-ip-service     │               │ server-cluster-ip-service     │
+│ Port: 3000                    │               │ Port: 5000                    │
+└──────────────┬────────────────┘               └──────────────┬────────────────┘
+               │                                                │
+               │                                                │
+               ▼                                                ▼
+
+    ┌───────────────────────────┐               ┌───────────────────────────┐
+    │   Frontend Pods           │               │         Backend Pods       │
+    │ (React / Client App)      │               │   (Node.js / API Server)   │
+    │ Port 3000                 │               │        Port 5000           │
+    └───────────────────────────┘               └───────────────────────────┘
+
+
+	* In Development environment,our NGINX configuration is attempting to force anyone who comes to our page to use a HTTPS connection as opposed to HTTP. By Default the NGINX Ingress is going to use a kind of dummy certificate.
+	
+	* The dashboard that will show you information about everything that's going on inside of your Kubernetes cluster.use the below command.
+		> minikube dashboard
+		
+	> Deploying your kubernetes in google cloud is more easier comparatively to AWS. (google created KUBERNETES)
+	
+	* we initially seen this problem like, when we ran this kubectl set image command, we had manually set on a version number or any new text as version in configuration file (.yaml), so that it'll identify the changes in config file and update the changes. we want this problem can be solved without editing the config(.yaml) file manually by adding the below way (tagging twice), it can be a one type of solution
+	
+		*we can appy two separate tags to the same image that gets created.
+			Ex : docker build -t <docker-id>/<image-name>:latest -t <docker-id>/<image-name>:$GIT_SHA -f 
+				<docker-file> <build-context>
+				
+				we're adding second tag as unique version identifier of a Git SHA.
+				benefits using the Git SHA:
+				- It helps to figureout the exact state of the code base that the deployments are running. in ay case our application is breaking, which help us to take those codebase and debug locally.
+				
+				- tagging the image with "latest" and with "git-sha" is helpful because, if anyone wants the latest image, they can download it without specifyting the "git-sha", it always downloads the latest image.
+				 
+	HELM : Helm is a third party software used to administer our Kubernetes cluster. it is very commonly used with some of these more complicated projects where some of the setup might be a little bit challenging in nature.
+	Ex: installing Ingress Nginx using Helm.
+				
+	In Our Project:
+		- we had set up that ingress service. And the ingress service relied upon the ingress nginx project which we had installed into our local mini-cube cluster. that specific command that allowed us to use this nginx ingress into our local cluster.
+		
+		- we have to go through a very similar set up on our production Kubernetes instance as well. So by default, the cluster	
+			that we just created on cloud has absolutely no idea of what an nginx ingress is and we have to install it as a separate service.
+			
+		- to setup Ingress-Nginx on cloud we have to go through that additional setup that is gonna create the load balancer service, map it to a GoogleCloud/AWS Load Balancer and then also set up a deployment running the ingress controller and the actual nginx pod that's gonna do the real routing.
+		
+		- If you recall back on the Docker Compose stuff we did. When we made use of Docker Compose, we set up a volume that mapped our local React Project directory into that volume. esentially, we were sharing our source code between our local file system and that client container.(That meant that anytime we changed our code on our local machine, it updated the code inside the container as well). 
+			we would have to completely "rebuild" the client image and then rerun that kubectl apply command, this is definitely a pain. we don't really have anything direct way to acheive this for Kubernetes, so we use tool called "skaffold".
+		
+		skaffold : This is a command line tool separate from Kubernetes but designed to be used with Kubernetes just to facilitate local development. Scaffold is going to watch our local Project (Ex: react) directory for changes. Once our changes saved, Scaffold somehow taking that change in our code and getting it reflected inside of our Kubernetes cluster. you need to create a .yaml file to work with skaffold.
+		
+			It uses 2 mdes to reflect the changes 
+			1. Rebuild the image from scratch update the k8s - slow 
+			2. Inject updated files into the pod, rely on react app to autometically update itself. here we need to make sure 	
+				that our (React UI -client pod) pod is running in such a mode where it's going to see these updated files and automatically update itself. (ex: nodemon - Auto reflects your changes to server)
+				
+		skaffold cons : if you have anything persistent, like maybe a database or a volume that you want to keep around for development purposes, do not add those configs (.yaml) into your Skaffold file, Skaffold is gonna delete that stuff as soon as you close it down. (Ex: postgres DB)
+		
+	>minikube ssh :  This will take us onto the minikube's Kubernetes cluster node.
+	
+	>kubectl create ns <name-space-name> :  creates a namespace
+	
+	> minikube delete : delete the current cluster.
+	> minikube start :  starts a new cluster 
+	
+	* Docker Desktop Kubernetes does NOT support LoadBalancer IPs by default.
+		you can use Port-forward : kubectl port-forward svc/myapache-tomcat 8080:80 -n default
+		if forwars the requests form our systems 8080 to 80
+		then access using : http://localhost:8080
+		
+	* If you really want LoadBalancer support locally You must install MetalLB
+	
+	* kubectl get svc : lists the services running on kubernetes
+	
+	* Kubernetes uses "probes" to check the health of your containers.
+		1. Liveness Probe : It makes sure your pod stays healthy over time.
+			Purpose:
+				- Checks if the container is alive or stuck.
+				- If livenessProbe fails, Kubernetes kills the container and restarts it.
+				
+			Use Case:
+				- App stuck in deadlock
+				- Infinite loops
+				- Unresponsive process
+				
+		2. Readiness Probe : It ensures traffic only reaches ready pods.
+			Purpose:
+				- Checks if the container is ready to accept traffic.
+				- If readinessProbe fails, Kubernetes removes the pod from Service endpoints (no traffic sent).
+				
+			Use Case:
+				- Waiting for app to initialize
+				- App connecting to database
+				- Loading cache
+				- Warm-up period
+				
+		- Key Difference (One Line)
+				Probe			What It Checks					Action When It Fails
+				-----			--------------					--------------------
+			livenessProbe		Is the app alive?				Pod is restarted
+			readinessProbe		Is the app ready for traffic?	Pod removed from service endpoints
+			
+		- Probe Types:
+			1. HTTP Probe : Your container exposes an endpoint.
+				Ex: 
+					livenessProbe:
+					  httpGet:
+						path: /healthz
+						port: 8080
+			2. TCP Probe : Checks if the TCP socket is accepting connections.
+				Ex: 
+					readinessProbe:
+					  tcpSocket:
+						port: 3306
+						
+			3. Exec Probe : Runs a command inside the container.
+				Ex:
+					livenessProbe:
+					  exec:
+						command:
+						  - cat
+						  - /tmp/healthy
+						  
+		- Complate Example of livenessProbe and readinessProbe of deployment.yaml
+		
+			apiVersion: apps/v1
+			kind: Deployment
+			metadata:
+			  name: myapp
+			spec:
+			  replicas: 3
+			  selector:
+				matchLabels:
+				  app: myapp
+			  template:
+				metadata:
+				  labels:
+					app: myapp
+				spec:
+				  containers:
+					- name: myapp
+					  image: myimage:latest
+
+					  # Liveness Probe: restart if container is unhealthy
+					  livenessProbe:
+						httpGet:
+						  path: /healthz
+						  port: 8080
+						initialDelaySeconds: 20
+						periodSeconds: 10
+						timeoutSeconds: 5
+						failureThreshold: 3
+
+					  # Readiness Probe: only send traffic when ready
+					  readinessProbe:
+						httpGet:
+						  path: /ready
+						  port: 8080
+						initialDelaySeconds: 10
+						periodSeconds: 5
+						timeoutSeconds: 3
+						failureThreshold: 3
+						
+
+- kubectl get congifmap : kubectl get configmap is used to list all ConfigMaps in the current Kubernetes namespace.
+	- A ConfigMap stores non-confidential configuration data (key-value pairs) used by pods.
+	
+	
+- we can run containers directly on Docker, So why do we need Kubernetes?
+	- We can run containers with Docker, but Kubernetes is used because it adds automation, scaling, self-healing, load balancing, rolling deployments, and cluster management — all the things Docker alone cannot do.
+	
+	- Key reasons why Kubernetes is needed ?
+		1. Scaling
+			Docker can start a container manually,
+			but Kubernetes can:
+				- Create 10, 50, or 100 replicas automatically
+				- Load balance traffic across them
+		
+		2. Self-healing
+			If a Docker container crashes, nothing restarts it automatically.
+			Kubernetes will:
+				- Detect failed containers
+				- Restart them automatically
+				- Reschedule them if a node goes down
+				
+		3. Load Balancing & Service Discovery
+			Docker gives you containers — but doesn’t manage:
+				- Internal networking
+				- Routing traffic
+
+			Kubernetes creates services that:
+				- Discover pods
+				- Route traffic to them
+				- Keep traffic balanced
+			
+		4. Declarative Management
+			With Kubernetes you describe the desired state:
+				I want 5 pods, running version X
+				I want CPU limit Y
+				Kubernetes continuously ensures reality matches your declaration.
+
+			Docker does not do this — everything must be done manually.
+			
+		5. Automated Rolling Updates / Rollbacks
+			In Docker, deploying a new version requires:
+				- stopping old container
+				- manually starting new one
+
+			Kubernetes can:
+				- Deploy the new version gradually
+				- Ensure zero downtime
+				- Roll back automatically if something breaks
+				
+		6. Multi-Node Cluster Management
+			Docker runs containers, but doesn’t manage clusters.
+
+			Kubernetes:
+				- manages containers across many nodes
+				- distributes workload
+				- balances usage
+
+		7. Storage & Config Management
+				Kubernetes provides:
+					- Persistent Volumes
+					- Secrets
+					- ConfigMaps
+
+				Docker doesn’t offer this orchestration by itself.
+				
+				
+AWS EKS (Elastic K8s Service): 
+	- Its a managed Kubernetes cluster 
+		AWS will manages master nodes for you (installing all the necessary softwares, scaling, backup etc)
+		
+		
+	
+
+
+
+
+	
+	
+
+

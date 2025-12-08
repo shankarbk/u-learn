@@ -1,0 +1,100 @@
+MINIKUBE COMMANDS - DAILY REFERENCE & INTERVIEW CHEAT SHEET
+===========================================================
+
+Format: <command> : <one-line explanation>
+
+--------------------------------------------------
+MOST USED / DAILY COMMANDS
+--------------------------------------------------
+minikube start : Start a local Kubernetes cluster using Minikube
+minikube status : Show the status of the Minikube cluster and its components
+minikube stop : Stop the running Minikube cluster (keeps data)
+minikube delete : Delete the Minikube cluster and all its data
+minikube dashboard : Launch the Kubernetes dashboard in the browser
+minikube ip : Show the IP address of the Minikube node
+minikube service <service-name> : Open a Kubernetes service in the browser
+minikube service <service-name> --url : Print the URL for accessing a service
+minikube kubectl -- get pods : Run kubectl via Minikube’s bundled kubectl
+minikube logs : Show logs from the Minikube components (VM/node)
+
+--------------------------------------------------
+CLUSTER & PROFILE MANAGEMENT
+--------------------------------------------------
+minikube profile list : List all Minikube profiles (clusters)
+minikube profile <name> : Set or switch to a specific Minikube profile
+minikube start -p <profile-name> : Start Minikube with a named profile
+minikube delete -p <profile-name> : Delete a specific Minikube profile
+minikube status -p <profile-name> : Show status for a specific profile
+
+--------------------------------------------------
+NODES & MULTI-NODE CLUSTERS
+--------------------------------------------------
+minikube node list : List nodes in the Minikube cluster
+minikube node add : Add a new node to the Minikube cluster (multi-node)
+minikube node delete <node-name> : Delete a node from the Minikube cluster
+minikube ssh : Open an SSH session to the Minikube node
+
+--------------------------------------------------
+KUBECTL INTEGRATION
+--------------------------------------------------
+minikube kubectl -- get pods : Run kubectl commands without separate kubectl install
+minikube kubectl -- get nodes : List nodes using Minikube’s kubectl
+minikube kubectl -- config view : Show kubeconfig as seen by Minikube
+
+--------------------------------------------------
+SERVICES, NETWORKING & TUNNELING
+--------------------------------------------------
+minikube service list : List all exposed services in the cluster
+minikube service <service-name> : Open a service in the default web browser
+minikube service <service-name> --url : Get the URL for a service
+minikube tunnel : Create a network tunnel to expose LoadBalancer services on localhost
+minikube ip : Show the Minikube node IP address
+
+--------------------------------------------------
+ADDONS (METRICS, DASHBOARD, INGRESS, ETC.)
+--------------------------------------------------
+minikube addons list : List all available Minikube addons and their status
+minikube addons enable <addon-name> : Enable a specific addon (e.g., ingress, metrics-server)
+minikube addons disable <addon-name> : Disable a specific addon
+minikube addons open <addon-name> : Open the web UI for an addon if available
+
+--------------------------------------------------
+IMAGES & CONTAINERS
+--------------------------------------------------
+minikube image ls : List images stored inside Minikube’s container runtime
+minikube image load <image-name> : Load a local image into Minikube’s node image store
+minikube image build -t <image-name> <path> : Build a Docker image inside Minikube from a Dockerfile
+minikube ssh docker images : List Docker images inside Minikube (when using Docker runtime)
+
+--------------------------------------------------
+CONFIGURATION & RESOURCES
+--------------------------------------------------
+minikube config view : Show Minikube configuration settings
+minikube config set <key> <value> : Set a Minikube configuration option (e.g., memory, cpus)
+minikube config unset <key> : Remove a specific config setting
+minikube start --memory=<MB> --cpus=<n> : Start Minikube with custom memory and CPU resources
+minikube start --driver=<driver> : Start Minikube with a specific driver (docker, virtualbox, etc.)
+
+--------------------------------------------------
+LOGS, DEBUGGING & MISC
+--------------------------------------------------
+minikube logs : Show logs from the Minikube components for debugging
+minikube ssh : SSH into the Minikube node for low-level debugging
+minikube dashboard : Start the Kubernetes dashboard (useful for debugging apps visually)
+minikube mount <local-path>:<vm-path> : Mount a local folder into the Minikube node
+minikube stop : Gracefully stop the Minikube cluster
+minikube delete : Remove the cluster completely (use with caution)
+
+--------------------------------------------------
+HANDY ONE-LINERS (GOOD FOR INTERVIEW DEMOS)
+--------------------------------------------------
+minikube start --driver=docker : Start Minikube using Docker as the driver
+minikube start --nodes=2 : Start Minikube with a 2-node cluster
+minikube addons enable ingress : Enable the NGINX ingress controller addon
+minikube addons enable metrics-server : Enable the metrics-server addon for kubectl top
+minikube service <service-name> --url : Quickly get service URL for testing
+minikube kubectl -- get pods -A : Use Minikube’s kubectl to list all pods in all namespaces
+
+--------------------------------------------------
+END OF FILE
+--------------------------------------------------
