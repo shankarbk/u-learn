@@ -1,0 +1,58 @@
+⚠ WARNING: Since August 28th, 2025, only a limited subset of images/charts are available for free.
+
+Subscribe to Bitnami Secure Images to receive continued support and security updates.
+
+More info at https://bitnami.com and https://github.com/bitnami/containers/issues/83267
+
+Solution:
+
+Append : --set image.repository=bitnamilegacy/<ChartName> to your helm install command
+
+Example:
+
+helm install mydb bitnami/mysql --set image.repository=bitnamilegacy/MySQL
+
+helm install myapache bitnami/tomcat --set image.repository=bitnamilegacy/tomcat 
+
+--------------My working notes----------------
+
+Install tomcat chart with auto generated name :
+	
+	helm install bitnami/tomcat --set image.repository=bitnamilegacy/tomcat --generate-name
+
+						OR
+
+	helm install bitnami/tomcat --set image.repository=bitnamilegacy/tomcat --generate-name --name-template "mywebserver-{{randAlpha 7 | lower}}"
+	
+	it creates the installation with name : mywebserver-fuimhxf (use "helm list" command to display name)
+
+
+use dry-run to check the installation :
+
+	helm install bitnami/tomcat --set image.repository=bitnamilegacy/tomcat --generate-name --dry-run
+
+			OR
+
+	helm upgrade mywebserver-fuimhxf  bitnami/tomcat --set image.repository=bitnamilegacy/tomcat --values  tomcat.yaml --dry-run 
+
+	mywebserver-fuimhxf - its installation name (not pod name)
+
+See the generated template :
+
+	 helm template bitnami/apache --set image.repository=bitnamilegacy/tomcat
+
+					OR
+
+	helm template mywebserver-fuimhxf bitnami/tomcat --set image.repository=bitnamilegacy/tomcat --values=tomcat.yaml (overrides the default values from values.yaml file)
+
+Get the release notes:
+
+	helm get notes mywebserver-fuimhxf
+
+Access the release records :
+	
+	helm history mywebserver-fuimhxf
+
+	kubectl get secret
+
+	kubectl get secret sh.helm.release.v1.mywebserver-fuimhxf.v1 -o yaml

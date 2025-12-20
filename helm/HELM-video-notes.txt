@@ -1,0 +1,1075 @@
+HELM
+-------------
+
+- Why do we need a repository before doing anything in Helm? 
+	- You need a Helm repository because Helm does not come with preloaded charts. 
+	- Before installing any chart from a vendor (Bitnami, Apache, MongoDB, etc.), Helm must know where those charts live. 
+	- Helm uses this repository to search, download, and install these charts.
+	
+- helm repo list : list all the helm repositories (or helm repo ls)
+
+create a helm repository :
+	helm repo add <repository-name>	<repository-url>
+	Ex:
+		helm repo add bitnami https://charts.bitnami.com/bitnami
+		helm repo add local-repo http://127.0.0.1:8080/
+
+
+helm install [NAME] [CHART] [flags]
+	[NAME]	- the release name you want to give to the deployment. Its a instance of a chart.
+	[CHART] - chart you want to install
+			  you can install a chart 
+				from a repo --> bitnami/tomcat
+				from a directory on your machine --> ./mychart
+				from a archive --> ./mychart-0.1.0.tgz
+	[flags] - Optional parameters you can add to customize the installation.
+	Ex : helm install mytomcat bitnami/tomcat --set image.tag=9.0.0 --namespace prod --create-namespace
+
+	
+
+- helm install : helm install deploys a Helm chart into Kubernetes cluster with a release name and optional custom configuration.
+	Ex: installing the MySql package, so we are going to use the MySql chart from Bitnami repository.
+	
+		helm install mydb bitnami/mysql --set image.repository=bitnamilegacy/mysql
+		mydb -  the release name, this name should be unique within the namespace. 
+		bitnami/mysql - chart name.
+		
+	- if you're inside the chart, use the "helm install <release-name> ." to install release.
+		
+	- To create a release in different namespace : helm install --namespace second_ns mydb bitnami/mysql
+	
+	- To create a new release in a new namespace(create a new namespace on the fly while creating new instll) :
+		helm install <release-name> bitnami/mysql --namespace <new-namespace-name> --create-namespace
+	
+		
+- helm status <release-name> : get all information which was shown to you as status when you did the installation.
+	Ex : helm status mydb
+	
+- helm list : list all the releases that are installed onto your kubernetes cluster (or helm ls)
+
+- helm uninstall <release-name> : to delete a particular installation or to uninstall a package from the cluster.
+	Ex : helm uninstall mydb
+	it will not only delete the release, it also deletes all the version information.
+	
+	- if you want to retain this information for rollback etc. then use the below command:
+		Ex: helm uninstall mydb --keep-history
+		IMP : "always keep the history"
+	
+
+- To set/pass custom configurations to pod,
+	Here we're configuring the custom password while creating the package for mysql, these properties(rootPassword) will very based on the package (mysql,redis etc)
+	1. use command line : helm install mydb bitnami/mysql --set auth.rootPassword = 12345 ---> not recommanded
+	2. use values.yaml : Recommanded approach
+		values.yaml
+		--------------
+		auth:
+			rootPassword: "test12345"
+	
+		
+- helm repo update : This command will fetch the latest charts by going to the repository. So what ever charts you have on your local, it will fetch the latest versions of those charts, and it will update the local cache with the changes if there are any in the remote repository.
+	- you can also pass the "values.yaml" configuration file while upgrading. Everytime it upgraded, it changes the REVISION version. 
+		Ex: helm upgrade mydb bitnami/mysql --values values.yaml
+		
+	- if you simply do upgrade without any configuration (.yaml), then it will use the default configuration.
+		Ex: helm upgrade mydb bitnami/mysql
+		
+	- you can pass the shortcut to use the previously used values file. helm stores and maintains the values during the installation on the server.
+		Ex: helm upgrade mydb bitnami/mysql --reuse-values
+		
+	- Helm is intelligent enough to only push those changes to the Kubernetes cluster that are required. Helm will generate the Kubernetes templates. It will compare them to the old templates that are already there, and only the changes that are required will be pushed to the Kubernetes cluster, saving us time and resources.
+	
+- How helm maintains the release records ?
+	When you do a installation or when you do a upgrade, helm will create a new secret in a kubernetes cluster(you can see it using "kubectl get secrets"). this secret is called release record. 
+	This record will have the entire information about that installation.this record used for rollbacks.
+	
+	- Helm uses  kubernetes resources "secret" to store release information.
+	
+	- This secret internally will have all the template information and the meta data about the installation.
+	
+	- To get the purticular secret information, use the below command 
+		> kubectl get secret
+		> kubectl get secret <secret-name> -o yaml
+	
+- --dry-run : helm install <release-name> bitnami/mysql -f values.yaml --dry-run 
+	✔ What it does:
+		- Renders the Helm chart templates.
+		- Validates the rendered manifests against the Kubernetes API server.
+		- Performs all install steps except actually creating resources.
+	
+	✔ What it checks:
+		- API schema validation (checks if manifests are valid for your cluster)
+		- CRD availability (Custom Resource Definition) - lets you add new resource types to Kubernetes beyond the built-in ones.
+		- Kinds supported by your cluster
+		- Value validation logic
+		- Kubernetes version compatibility
+		
+	✔ Requires:
+
+		- Active connection to a Kubernetes cluster
+		 (uses your kubeconfig context)
+		 
+	❌ Does not:
+		- Create resources
+		- Store release in cluster
+	
+	* The dry run can be used for both installation and upgradation. It also includes the some content which is not .yaml compatable.
+	
+	Ex: 
+		installation :
+			helm install mydb bitnami/mysql --values values.yaml --dry-run
+			
+		upgrade: 
+			helm upgrade mydb bitnami/mysql --values values.yaml --dry-run
+			
+- helm template : helm template mydb bitnami/mysql --values=values.yaml
+	- if the charts have any Kubernetes functions or functions that fetch the data from the Kubernetes cluster on the fly, those functions will be replaced with default values.
+	
+	- To generate template for the chart you created : helm template <your-chart-name>
+		Ex: helm template my-first-chart/
+	
+	
+	✔ What it does:
+		- Renders the Helm chart templates locally into plain YAML.
+		- Outputs YAML to stdout or a file.
+	
+	✔ What it checks:
+		- Only template rendering
+		- Only Helm functions and templating syntax
+	
+	✔ Does not:
+		- Validate YAML against Kubernetes API
+		- Connect to the cluster
+		- Check CRDs or Kubernetes version compatibility
+		- Install anything
+		
+	✔ Use cases:
+		- Debug templates
+		- Export YAML for GitOps
+		- Use with ArgoCD / Flux
+		- Generate manifests offline
+		
+- helm get <release-name> : helm get is used to retrieve information about an installed Helm release.(similar to "helm ls", but have more options"
+			Command									What it shows
+	helm get all <release>				Everything (manifest, values, hooks, notes)
+	helm get manifest <release>			The final rendered Kubernetes YAML
+	helm get values <release>			The custom values currently in use (merged) from values.yaml for provided releases
+	helm get hooks <release>			Any hooks included in the chart
+	helm get notes <release>			Release notes shown after install
+	helm get metadata <release>			Release metadata
+	
+	Ex: helm get notes mydb
+		helm get values mydb --revision 1
+		helm get manifest mydb --revision 1
+
+
+- helm history <release> : shows the revision history of a Helm release, including all upgrades, rollbacks, and status changes.
+	It displays
+		- Revision number
+		- Update date/time
+		- Chart version
+		- App version
+		- Status (deployed, superseded, failed, pending)
+		- Description of the action
+		
+	-  it will show you the history along with revisions
+		it also maintains the error information even though upgrade or installation fails. The version and history for it will be maintained for failed upgrades.
+		
+- helm rollback <release-name> <revision> : restores a Helm release to a previous revision from its history.
+	you can also use "--dry-run" optional flag To preview the rollback without applying it.
+	It does
+		- Reverts the release to an earlier known good state
+		- Creates a new revision (does not overwrite history)
+		- Re-applies the manifests from that old revision
+		
+	Ex: helm rollback mydb 1
+	
+- Upgrade or Install : it will first check if the release is already there. If it is there, it will do the upgrade, 
+	otherwise it will do a Install.
+	It ensures the release is "installed if it doesn’t exist" or "upgraded if it already exists".
+	Ex: helm upgrade --install <release-name> <chart>
+		helm upgrade --install mywebserver bitnami/apache 
+
+	It does
+		- Prevents “release not found” errors
+		- Useful for CI/CD pipelines (idempotent deployments)
+		- Applies new chart changes or values
+			
+			
+- --generate-name : helm install --generate-name <chart>
+		installs a chart and automatically generates a unique release name, instead of requiring you to provide one.
+		
+	It does
+		- Creates a release name based on chart name + random suffix
+			Example: mysql-1678439210
+		- Useful for quick testing or demos
+		- Avoids name conflicts when installing the same chart multiple times
+	Ex: helm install --generate-name bitnami/mysql
+	
+- Expression syntax {{}} : helm install <chart-name> --generate-name --name-template "mywebserver-{{randAlpha 7 | lower}}"
+	It does
+		- Installs the chart <chart-name>
+		- Automatically generates the release name using the template you provide
+		- The template mywebserver-{{randAlpha 7 | lower}} creates a name like: mywebserver-abcxyzp(random 7 lowercase alphabet characters)
+	Ex: helm install bitnami/tomcat --set image.repository=bitnamilegacy/tomcat --generate-name --name-template "mywebserver-{{randAlpha 7 | lower}}"
+	
+- --wait : tells Helm to wait until all resources(pods) are fully ready(up and running) before marking the installation as 		
+			successful.
+			Ex: helm install <release-name> <chart> --wait
+			by default. It will wait for five minutes, 300 seconds.
+			
+			specify the timeout : --timeout <time>
+				Ex: helm install <release-name> <chart-name> --wait --timeout 5m10s
+			
+		It waits for
+			- Pods become up and Running/Ready
+			- Deployments, StatefulSets, DaemonSets become Available
+			- Services, Ingress, PVCs bind successfully (as applicable)
+
+		If something fails
+			- Helm times out and shows an error
+			- No “successful install” message is shown
+			
+- --atomic : It will wait for five minutes by default. if the pods are not up and running within the five minutes, Instead of 
+			marking the installation as failure, it will roll back to the previous successful release.
+	Ex: helm install <release-name> <chart-name> --atomic
+		helm install myapp bitnami/nginx --atomic --timeout 10m0s
+	It does
+		- If the installation fails, Helm automatically rolls back to the previous state.
+		- If the install succeeds, everything stays deployed.
+		- Prevents partial or broken deployments.
+		
+-- force : By default Helm will restart those pods whose values have changed. It will not restart all the pods all the time.
+			By using "--force", Kubernetes will delete the deployment and it will recreate the deployment.
+			As a result, Kubernetes will delete the old pods and create new ones. So there will be some downtime when you use "--force option".
+			
+			- forces Helm to recreate resources instead of doing a normal patch-based update.
+			
+			
+Quiz:
+	helm template : command do not validates the generted objects/yaml by communicating with Kubernetes
+	helm get values mydb --all : this command give us all the values used for a particular installation
+	--name-template : can be used to specify a format while generating a name for the template
+	--wait : this flag makes the helm to waits for the pods to be up and running when you do a helm install
+	--atomic : should be used to rollback to a previous successful installation if the current installation fails
+
+- helm create <chart-name> : it creates a generic boilerplate chart using Helm’s default built-in template.
+	it generates a starter chart that includes a sample Deployment using the NGINX image, but it does not use or depend on any official NGINX chart.
+	
+	This template includes:
+		Chart.yaml
+		values.yaml
+		templates/deployment.yaml
+		templates/service.yaml
+		templates/ingress.yaml
+		helper templates
+		
+	The "helm create my-first-chart" creates the default folders and files as below :
+	my-first-chart/
+		├── .helmignore
+		├── Chart.yaml
+		├── values.yaml
+		├── charts/
+		├── templates/
+		│   ├── _helpers.tpl
+		│   ├── deployment.yaml
+		│   ├── hpa.yaml
+		│   ├── ingress.yaml
+		│   ├── service.yaml
+		│   ├── serviceaccount.yaml
+		│   └── tests/
+		│       └── test-connection.yaml
+		└── README.md  (Sometimes present in newer versions)
+		
+		1️.helmignore	: Works like .gitignore. Lists files and folders Helm should ignore when packaging the chart.
+		2.Chart.yaml	: The main metadata file of the chart.
+		3.values.yaml	: The default configuration file for your chart.
+		4.charts/		: Empty by default. Used for chart dependencies. If your chart depends on Redis, MySQL, etc., the 
+						  dependencies get stored here.
+		5.templates/	: This folder contains all Kubernetes YAML templates that Helm renders into final manifests and deployed 
+						  into kubernetes cluster.
+		
+			5.1._helpers.tpl	: _helpers.tpl is a special template file inside a Helm chart’s templates/ directory.
+									It contains named template helper functions — reusable snippets that you can call from any 
+									YAML file.
+								  ( Ex: Naming templates,Label helpers,Common annotations ) 
+								  ".tpl" stands for trmplate
+									Why use _helpers.tpl?
+										- To avoid repeating the same YAML across multiple files
+										- To manage naming conventions in one place
+										- To generate labels, annotations, names, selector fields
+										- To keep deployment.yaml, service.yaml, etc., clean
+								  
+			5.2.deployment.yaml	: Generates a Kubernetes Deployment resource. This Deployment uses nginx by default (only as an 
+								  example—you can change it).
+								  
+			5.3.hpa.yaml		: Creates a HorizontalPodAutoscaler.
+			
+			5.4.ingress.yaml	: Creates an Ingress (if enabled in values.yaml, Disabled by default).
+			
+			5.5.service.yaml	: Creates a Kubernetes Service.
+								  from values.yaml, pulls: 
+									service.type (ClusterIP, NodePort, LoadBalancer) 
+									service.port
+			
+			5.6.serviceaccount.yaml : Creates a ServiceAccount for your pod (optional).
+			
+			5.7.tests	: Helm tests
+				5.7.1.test-connection.yaml : A test Pod used for. (Checks whether the Service responds.)
+				
+	- To instal our chart : helm install <release-name> <chart-name>
+							Ex: helm install my-chart-release my-first-chart/
+							
+	chart.yaml
+	-------------------------
+	apiVersion: v2
+	name: my-first-chart
+	description: A Helm chart for Kubernetes
+	type: application
+	version: 0.1.0
+	appVersion: "1.16.0"
+	keywords:
+	  - web
+	  - nginx
+	  - backend
+	  - sample-app
+	sources:
+	  - https://github.com/example/my-webapp
+	  - https://docs.example.com/webapp
+	home: https://example.com/my-webapp
+	icon: https://example.com/images/app-icon.png
+	maintainers:
+	  - name: S K
+		email: sk@example.com
+	dependencies:
+	  - name: redis
+		version: 17.3.0
+		repository: "https://charts.bitnami.com/bitnami"
+		condition: redis.enabled
+	
+	
+	
+	Explanation:
+		apiVersion: v2 --> 	- Specifies the version of the Chart.yaml format.
+							- `v2` is used for Helm version 3.
+							- In Helm 2, it was `v1`.
+							
+		name: my-first-chart --> - This is the chart name.
+								 - It must be unique within a repository.
+								 - This name becomes part of the release name.
+								 
+		description: A Helm chart for Kubernetes --> - A short summary of what the chart does.
+													 - Helps users identify the purpose of the chart.
+													 
+		type: application --> - Defines what kind of chart this is.
+								Helm supports two chart types:
+								1. application : - This is the most common type.It contains Kubernetes manifests that will be 
+												 deployed to the cluster.
+												 - Use this when your chart deploys real workloads, such as: 
+												   Deployments,Services,ConfigMaps, Ingress, StatefulSets, CronJobs
+												 - application charts install running software into Kubernetes.
+												 Example use cases: Deploying NGINX, Deploying Tomcat, Deploying microservice API, Deploying any actual application.
+												 
+								2. library		: - A library chart does not deploy anything.
+												  - It only contains helper templates that other charts can reuse. (Think of 
+												    this like a shared functions module.)
+													
+													Library charts:
+														- Do NOT create Kubernetes objects
+														- Have no Deployment, Service, etc.
+														- Only contain reusable logic (helpers, partials, macros)
+														- Are used by other charts via dependencies: section
+
+													Library charts are used in large organizations where many charts share:
+														- Common labels
+														- Common annotations
+														- Standard deployment blocks
+														- Common helper functions
+	
+		version: 0.1.0 --> 	- This is the chart version, not the application version.
+							- Follows semantic versioning (semver).
+							- Used by Helm internally for:
+							- Chart packaging
+							- Chart repository indexing
+							- Upgrades
+							Note : Every time you change the chart itself (templates, values), you should bump this version.
+							
+		appVersion: "1.16.0" --> - Indicates the application’s version (your software version).
+								 - This is informational only for Helm.
+								 - Does not affect the chart packaging.
+								 Important: appVersion does not trigger Helm updates. It is just a label to show what version of the app your chart installs.
+								 Ex: 
+									If your chart deploys nginx 1.16.0, you'll set: appVersion: "1.16.0"
+									If you deploy Tomcat 9, then: appVersion: "9.0"
+									
+		keywords :	- List of keywords to help searching
+					- Helps users find your chart when searching.
+					- Especially useful in large organizations or public repos.
+								 
+		sources :	- Links to the project's source code, documentation, or homepage
+					- Points to: GitHub repo, Documentation, Docker image URL, Homepage
+		
+		home: 	- Optional home page for documentation
+		
+		icon : Icon displayed in Helm UI dashboards (optional)
+		
+		maintainers: - Lists chart authors/owners.
+					 - Useful for: Teams, Support contacts, Open-source chart contributions
+		
+		dependencies : Dependencies (if chart depends on others)
+					   Used when your chart requires sub-charts (e.g., Redis, MySQL, PostgreSQL, Elasticsearch).
+		
+		kubeVersion: ">=1.20.0" --> - Kube version compatibility
+		
+		
+-  helm package <chart-folder> : package your chart so that it can be distributed or shared through repositories. so that It can be used to install the software across environments, testing, staging production through our CI CD pipelines as well.
+Ex: helm package my-first-chart/
+
+	- helm package my-first-chart --dependencies-update OR helm package my-first-chart -u : This will pull the latest 
+	dependencies. If "my-first-chart" chart depends on other charts, it will pull the latest versions of all those charts puts them under this charts folder before the packaging is done.
+	
+	- helm package my-first-chart --destination c:\my-other-chart OR helm package my-first-chart -d c:\my-other-chart :it packages the specified destination chart.
+	
+	
+- helm lint : command used to validate your Helm chart. It checks whether your chart is correct, well-formed, and follows best 
+			  practices.
+	- helm lint helps ensure your Helm chart is valid, error-free, and follows recommended best practices before installation.\
+	Ex: helm lint <chart-folder>
+	
+	- it gives 3 levels of details ( "info" and "warning" will return a zero exit code )
+		info	: returns exit code 0
+		warning	: returns exit code 0
+		error	: returns exit code other then 0 (non zero)
+	
+	It checks for :
+		- Syntax validation ( Checks YAML formatting inside: templates/*.yaml, values.yaml, Chart.yaml)
+		
+		- Missing required fields (Example: chart name, version, template required fields)
+		
+		- Template rendering issues (It renders your templates and looks for errors like Missing values (.Values.xxx), Bad 
+			indentation, Invalid Go template expressions)
+			
+		- Best-practice warnings (Linting rules check for: deprecated API versions, Unused variables, Missing maintainers,Poor 
+			naming conventions)
+
+Templates depp dive :
+	- {{ }} -  its called action elements, should read and refer this document : https://helm.sh/docs/chart_template_guide/
+	
+	- {{- "Hello world"}} - the 'hypen (-)' inside the action element is used to remove leading or trailing spaces. without removing spaces, it may cause yaml indentation issues.
+	
+	- .Values.podAnnotations : The .(dot) before the Values represents the current context (the current object or scope).
+		. → current template context
+		.Values → values provided to the chart from values file (values.yaml)
+		.Values.podAnnotations → the value of podAnnotations from values.yaml
+		
+	- .Chart.AppVersion : The .(dot) before the Values represents the current context (the current object or scope).
+		. → current template context
+		.Chart → values provided to the chart from Chart file (Chart.yaml)
+		.Chart.AppVersion → the value of AppVersion from Chart.yaml
+		
+	- Other then these 2 files (Chart.yaml and values.yaml), you can't load other values from a new yaml file (test.yaml).
+		
+	- Define variable and use variables in .yaml files : to do so we can use the action block({{}}) and dollar($).
+		Once you assign a particular type(bool, string, list) to a variable, that variable will become of that type.
+		Ex: in deployment.yaml --> {{$myVarName := true}}
+		
+- difference between "helm template <chart-name>" VS "helm install <release-name> <chart-name> --dry-run"
+	1. helm template <chart-name>
+		- Renders templates locally — no Kubernetes API call is made
+		- ONLY renders the chart templates into YAML.
+		- Produces raw YAML output.
+		- Does not check whether the resources are valid for the cluster.
+		- Does not contact the Kubernetes API server.
+		
+	2. helm install <release-name> <chart-name> --dry-run
+		- Simulates an actual installation WITH Kubernetes API validation
+		- Renders templates (same as helm template), But also Validates the rendered YAML AGAINST the Kubernetes API
+		- Requires a valid kubeconfig & cluster access
+		- Check whether the resources are valid for the cluster.
+		
+- helm get manifest : shows the exact YAML Helm deployed for a specific release.
+	- It Shows the final rendered YAML stored in Helm’s release history. This is the actual YAML applied to Kubernetes (after 
+		templates + values were processed).
+		
+	- used to compare the differences between template that were used during the installation or upgrade and what currently 
+		exists on the Kubernetes cluster.
+		
+	- Why it's useful
+		- To see what Kubernetes objects were created.
+		- For debugging differences between:
+			- What you expected vs.
+			- What Helm actually deployed.
+		- Useful after upgrades to compare manifests.
+		- Helps in troubleshooting when cluster objects differ from template output.
+		- It helps to validate If the release was tweaked outside of Helm using kubectl or by using service mesh(service 
+			to service communication) or by some other way other than Helm commands.
+	Ex: helm ls
+		helm get manifest <release-name>
+	
+- What are template and include in Helm?
+	- Both are Helm functions used to call a helper template defined in _helpers.tpl.
+	Ex: 
+		_helpers.tpl : Here we defined a new function called (mytemplate), which return value from a values.yaml file.
+		-------------
+		{{- define "my-first-chart.mytemplate" -}}
+		{{ .Values.my.custom.stringValue }}
+		{{- end }}
+		
+		deployment.yaml/service.yaml (in any other templates, you can call the above defined function using "include" or "template" But they behave differently.
+		
+		deployment.yaml
+		---------------
+		{{ template "my-first-chart.mytemplate" . }}
+						OR
+		{{ include "my-first-chart.mytemplate" . }}
+		
+		1. using "template" : 
+			— its a direct Rendering (older way)
+			- Outputs the helper content directly (The content from the helper is inserted exactly as-is into your YAML.)
+			- No ability to modify the output (you can’t indent it, trim, pipe - The YAML indentation could break or become 	
+				messy) 
+			- Older Helm charts used this, but it is not flexible.
+			- Not recommended in modern charts because it's hard to format YAML.
+			
+		2. using "include" : 
+			- Returns Output as a String (recommended)
+			- This allows you to modify the output using pipes (ex: nindent, trim, indent)
+			- Helps produce clean YAML formatting
+			- Most Helm charts (including Bitnami, ArtifactHub standards) use include.
+		
+- What is default in Helm?
+	- default is a Helm/Golang template function that returns a fallback value when the actual value is empty, missing, or undefined.
+	Syntax	: default DEFAULT_VALUE ACTUAL_VALUE
+	Ex		: {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+	
+			.Values.nameOverride = user-defined override (may be empty)
+			.Chart.Name = chart name (fallback default)
+			
+			👉 If .Values.nameOverride exists and is not empty → use it
+			👉 Otherwise → use .Chart.Name
+			
+*  "toYaml" helm templatig function is used to convert objects to yaml
+
+* Explan . and $ inside Helm templates:
+	✔️ . (dot) : Represents the current context (current element).
+		Ex 1: 
+			You are referring to whatever the current template context is.
+			{{ .Values }} 
+		
+		Ex 2:
+			. (dot) always means: "where I am right now".
+			{{ with .Values.service }}
+				{{ .port }}   # ← this . refers to .Values.service
+			{{ end }}
+
+	✔️ $ (root) : $ is used to refer to the top-level context/root of the template.
+		Ex: 
+			So $ means: “go back to the root context” (top level)
+			{{ with .Values.service }}
+			  {{ .port }}      # current: .Values.service
+			  {{ $.Values }}   # parent/root values
+			{{ end }}
+
+	
+- ":=" : operator is used to initially assign a value to a variable
+		
+		
+- What is a Dependency Chart?
+	A dependency chart is another Helm chart that gets installed automatically along with your main chart because your chart 
+	lists it as a requirement.
+	
+	- use the below command to pull the dependency :
+		helm dependency update <chart--name>
+		Ex: helm dependency update my-first-chart
+		
+	- once dependency is downloaded, you need to install with "helm install <release-name> <chart-name>"
+
+	For example:
+		Your application needs Redis. Instead of writing Redis YAML manually, you use the official bitnami/redis chart as a dependency, So your main chart becomes a “parent chart,” and Redis is a “child chart.”
+	
+- Where do we define dependencies?
+		Dependencies are listed in Chart.yaml
+		Ex : Chart.yaml
+			-------------
+			dependencies:
+			  - name: redis
+				version: ">=17.0.0" 
+				repository: https://charts.bitnami.com/bitnami
+				condition: redis.enabled
+				
+			  - name: prometheus
+				tags: ["monitoringEnabled"]
+				
+			  - name: grafana
+				tags: ["monitoringEnabled"]
+				
+			
+			values.yaml
+			-----------
+			# Only redis is disabled — no group logic.
+			redis:
+				enabled: false
+			
+			# Disabled whole groups which dependency has "monitoringEnabled" tag
+			tags:
+				monitoringEnabled: false
+				
+				
+		- Helm provides two ways to enable/disable dependencies (subcharts)
+			1. tags → Group-based control
+			2. condition → Direct, per-chart control
+			
+			1. tag : A label assigned to one or more dependencies. Used to enable/disable multiple subcharts together.
+			2. condition : A boolean flag to turn ON/OFF a single dependency.
+				
+- Why dependency charts are useful ?
+	✔️ Avoid writing duplicate YAML (You don’t have to write configs for Redis, MySQL, RabbitMQ, Nginx, etc.)
+	✔️ Reuse stable, production-tested charts (Bitnami, Elastic, Prometheus, Loki, etc.)
+	✔️ Automatic version management (Upgrading your chart automatically upgrades dependencies if needed.)
+	
+	
+- What is Chart.lock in Helm?
+	- Chart.lock is a lock file automatically generated by Helm to store the exact versions of all dependency charts used by 
+	your Helm chart.
+	
+	- It ensures that your chart always installs the same dependency versions, even if newer versions are available in the repository.
+	
+- How to Pass Values to Dependencies from Main Chart (Parent Chart) ?
+	- Any subchart gets its values from the parent chart under a key with the same name as the subchart.
+	Ex: Our first-chart Folder Structure 
+		my-app/
+		  Chart.yaml
+		  values.yaml
+		  charts/
+			redis/
+			mysql/
+			
+		Helm loads the:
+			Parent chart values from → values.yaml
+			Subchart values from → charts/<chart>/values.yaml (Ex: redis chart values load from charts/redis/values.yaml)
+			Then merges them (parent values override subchart values)
+			
+		To Pass Values to a Dependency chart:
+			In parent values.yaml, create a block with the subchart name as the key.
+			Example: You want to modify Redis dependency values.
+			
+		Chart.yaml
+		----------
+		dependencies:
+		  - name: redis 	# it is the chart name
+			repository: "https://charts.bitnami.com/bitnami"
+			version: "17.0.0"
+			
+		values.yaml(parent)
+		-------------------
+		redis: 			# this name should be same as chart name of dependency chart.
+		  architecture: "standalone"
+		  replica:
+			replicaCount: 2
+		  image:
+			tag: "7.2.0"
+			
+- How to import values from child chart to parent chart ?
+	- You CANNOT directly import values from a child (subchart) back into the parent chart. because parent templates are rendered before child templates, there is no flow upward.
+	
+	- To achieve similar behavior, use this supported mechanism
+		import-values : import-values works (two modes)
+			mode 1: exports format : simple import of keys defined under exports in the child 
+				- Child chart exposes a block under exports: in its values.yaml.
+				- Parent lists the keys to import in its Chart.yaml dependency entry.
+				- The contents of the child’s exports.<key> are copied into the parent’s top-level values.
+				
+				values.yaml (child)
+				---------------------
+				exports:
+				  appinfo:
+					name: my-app
+					port: 8080
+					
+				Chart.yaml (parent)
+				--------------------
+				dependencies:
+				  - name: mychild
+					repository: "file://charts/mychild"
+					version: "0.1.0"
+					import-values:
+					  - appinfo
+					
+				Conclusion : after dependency processing, parent .Values will contain name: my-app and port: 8080 at top level (the child appinfo key itself is not preserved at the top — its contents are merged into the parent).
+				
+			mode 2: child → parent mapping (child-parent format) : import from arbitrary child path into a chosen parent path
+				- Use this when the values you want are NOT under exports or you want to place them under a specific parent key.
+				- You specify child: <path> and parent: <path>.
+				
+				Chart.yaml (parent)
+				--------------------
+				dependencies:
+				  - name: mychild
+					repository: "file://charts/mychild"
+					version: "0.1.0"
+					import-values:
+					  - child: default.service
+						parent: mychildService
+						
+				If mychild has values.yaml with:
+					service:
+					  port: 9000
+					  type: ClusterIP
+					  
+				Conclusion : Parent .Values.mychildService will contain { port: 9000, type: ClusterIP }
+
+						
+		❌ exports (Deprecated Feature in Helm 2) : this was removed in Helm 3, so it does not work anymore.
+			- In Helm 2, a subchart could expose values to parent using:
+			requirements.yaml (child)
+			----------------
+			exports:
+				key: value
+				
+			Conclusion : exports works in Helm 3 when used inside child values.yaml (explained as above import-values). 
+					It does not work inside requirements.yaml (Helm 2 behavior). requirements.yaml was removed in helm3
+
+- What are Helm Hooks?
+	- Helm hooks are special annotations that allow you to run Kubernetes resources before or after certain Helm lifecycle events such as install, upgrade, delete, test, etc.
+	
+	- If you want to take some special action during the helm release process, then you create a hook.
+
+	- They let you perform tasks that should not be part of the normal release lifecycle, but must run at specific moments.
+
+	- How Helm Hooks Work: add a hook "annotation" to a YAML manifest inside your chart
+		Ex : 
+			annotations:
+				"helm.sh/hook": pre-install
+				
+		When Helm sees this annotation, it will:
+			- NOT install this resource as a normal chart part
+			- Instead, create it only during the lifecycle phase indicated
+			
+	- Hook Events: These hooks trigger in the order Helm manages them.
+			Hook				Description
+			----				-----------
+		pre-install		Runs before resources are installed
+		post-install	Runs after install completes
+		pre-upgrade		Runs before upgrading release
+		post-upgrade	Runs after upgrade
+		pre-delete		Runs before deleting release
+		post-delete		Runs after deletion
+		pre-rollback	Runs before rollback
+		post-rollback	Runs after rollback
+		test-success	Used for helm test
+		test-failure	Used for helm test
+	
+	- Where hooks are used
+		✔ Database migration jobs
+		✔ Initializing configs or secrets
+		✔ Cleaning up PVCs before uninstall
+		✔ One-time setup tasks before pods start
+		✔ Running helm tests
+		✔ Registering components with a system
+		
+	- Hook Weight (ordering) : If multiple hooks run at the same phase, you can control order
+		Lower weight = executed earlier
+		Default = 0
+		Ex: 
+			annotations:
+			  "helm.sh/hook": pre-install
+			  "helm.sh/hook-weight": "-5"
+			  
+	- Hook Delete Policies : After hook resources run, what should Helm do with them?
+		IMP : If you don’t specify a policy → hook resources stay forever in the cluster ✔ (very common mistake)
+		Ex:
+			annotations:
+				"helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded
+		
+		Available policies:
+				Policy				Meaning
+				------				-------
+			before-hook-creation	Delete old hook before creating a new one (default - behaviour)
+			hook-succeeded			Delete after successful run
+			hook-failed				Delete after failed run	
+			
+	- Important Hook Behavior
+		- Hooks don’t block unless the hook Job/Pod itself gets stuck
+		 (Helm only waits as long as Kubernetes is running the hook resource.)
+
+		- A hook must finish successfully for Helm to continue the install/upgrade
+		 (If the hook fails, Helm stops the release unless you change its policy.)
+
+		- Helm records the result of every hook
+		 (You can see hook events in helm history and release metadata.)
+
+		- Hook resources are not part of your regular deployment
+		 (They are created only for the hook event and not kept as part of the final release.)
+
+		- Hooks still run even if normal resources had issues
+		 (Hook execution is tied to the Helm lifecycle, not the success of other templates.)
+
+	
+- Helm test <release-name> : used to run the tests 
+	- while installing the application/creating a release "helm install <release-name> <chart-name>", the test manifest hook will also become a part of the manifest that will be sent over to the Kubernetes.
+	
+	- The templates/tests/ directory is where you place test manifests.
+		- These files do not deploy application resources.
+		- They deploy Kubernetes test jobs/pods with special Helm annotations.
+		
+	Ex: 
+		annotations:
+			"helm.sh/hook": test
+			
+		This tells Helm
+			- Create this resource only during helm test
+			- Do not include it in the main release
+			- Delete it after test completes (if delete policy is set)
+			
+	test hooks :
+			Hook		When test is considered successful
+			----		----------------------------------
+		test-success	Test passes only if pod exits with success
+		test-failure	Test passes only if pod exits with failure
+		test			Backward compatible alias for test-success
+		
+	
+	- What helm tests are used for ?
+		✔ Connectivity checks
+		   (Example: can the app connect to DB?)
+
+		✔ Smoke tests
+		   (Example: does /health endpoint return OK?)
+
+		✔ Functional checks
+		   (Example: migrate DB, verify tables)
+
+		✔ Pre-production validation
+		   (Charts published to ArtifactHub usually have tests)
+		   
+	- behavior of helm tests
+		- Tests do not take part in normal installation
+		- They run only on helm test <release>
+		- Tests appear in helm history <release>
+		
+- Helm repo index : creates the index file for charts, which includes information about availabe charts in thet repository.
+	Ex : 
+		Helm repo index <repo-directory-name> : name of the repository directory to create index
+		Helm repo index . : navigate inside repo directory and creata a index file  
+		
+- helm package <chart-name> -d <chart-repo-directory> : creata a package for your chart in destination directory by specifying 
+														"-d" option.
+	Ex: 
+		helm package my-first-chart -d my-chart-repo
+		From the chart directory (the folder that contains Chart.yaml) : helm package my-first-chart/
+		this chart will get the version from : my-first-chart/Chart.yaml.
+		
+	- once you packaged and moved your chart to chart repository, you need to updata the index file.
+		
+- helm repo index <charts-repo> :  update the index file, with new chart information
+
+- How to host helm repository locally ?
+	- it requires a web server up and runnning locally (Ex: apache, nginx, you can use python's inbuilt web server)
+	- Go to to run local pyton server run the below command :
+		python -m http.server --bind 127.0.0.1 8080 
+		
+	- it will start serving the contents in the current directory where we are running that command.
+	- once you hosted your chart to local host, add this host as repository 
+		ex: helm repo add local-repo http://127.0.0.1:8080/
+	
+- to installed your packaged chart from localhost use the below command
+	helm install my-chart-release local-repo/my-first-chart
+	
+- helm pull : It downloads a chart package (.tgz) from a Helm repository (HTTP repo or OCI registry) into your local machine.
+	Syntax : helm pull <repo-name>/<chart-name> --version <version>
+	Ex	: helm pull bitnami/nginx -- version 1.0.0
+
+	- once chart downloaded to local, you can install it using below command 
+		helm install my-chart-release nginx-1.0.0.tgz
+
+- helm search repo is used to search charts inside the Helm repositories that you have added locally using helm repo add.
+								  
+	- It does not search the entire internet — only the repos configured in your Helm client.
+	
+	- Helm caches the repository index on your local machine. so it searches from this chche. If the remote repository has NEW charts, UPDATED charts, NEW versions, Changes in descriptions Your local cache will NOT know unless you run "helm repo update
+"
+	- the "helm repo update" This command downloads the latest index.yaml from every repo you added
+	- You must run helm repo update because Helm search uses local cached index files. Updating ensures your cache matches the 
+		latest charts on the server. Without update → you see old/outdated chart list
+		
+	Ex: helm search repo <keyword>
+		helm search repo my-first-chart
+		
+		Search within a specific repo : helm search repo bitnami/nginx
+		Shows all versions available for that chart. : helm search repo bitnami/nginx --versions
+		
+	- returns a list of matching charts with (Name, Chart version, App version, Description)
+	
+- you can push your repo to github. The user can access all the charts once they have access to the repository, there is no 
+	fine-grained access available 
+
+- What is an OCI Registry in Helm?
+	- An OCI registry is a container registry (like Docker Hub, GHCR, ECR, ACR, GCR) that follows the OCI Artifact Specification.
+	- Instead of storing Helm charts in an HTTP repo (index.yaml), you can store them in a container registry (OCI registry).
+	- Helm 3 supports storing Helm charts as OCI artifacts, just like container images. So Helm charts become registry artifacts 
+		just like Docker images
+		
+	- IMP:
+		- OCI registry stores Helm charts like container images.
+		- You push/pull/install charts using registry commands — no index.yaml.
+		- More secure, modern, and easier for private charts.
+		
+	- Why OCI for Helm? (Benefits)
+		✔ No index.yaml needed
+			Traditional repos need an index.yaml.
+			OCI registries don’t need this — charts are stored like tagged images.
+
+		✔ Better authentication
+			Use Docker/registry login (helm registry login).
+
+		✔ Private chart support becomes easy
+			Any registry access policy applies to charts.
+
+		✔ Versioning like image tags
+		
+	- Login:
+		helm registry login <registry>
+
+	- Save chart as an OCI artifact:
+		helm chart save ./mychart oci://<registry>/<org>/<chart>:<version>
+		Ex: helm chart save ./mychart-1.0.0.tgz ghcr.io/<user>/helm/mychart:1.0.0
+
+	- Push to registry:
+		helm chart push oci://<registry>/<org>/<chart>:<version>
+		Ex: helm chart push ghcr.io/<user>/helm/mychart:1.0.0
+
+
+	- pull from registry:
+		helm pull oci://<registry>/<org>/<chart> --version <version>
+		Ex: helm pull oci://ghcr.io/<user>/helm/mychart --version 1.0.0 --untar
+
+
+	- Installing a Helm chart from OCI:
+		helm install myrelease oci://<registry>/<org>/<chart> --version <version>
+		Ex: helm install myrelease oci://ghcr.io/<user>/helm/mychart --version 1.0.0
+
+	- Do hands on this by using local docker desktop.
+	
+- signing charts : signing charts is an excellent step for integrity and origin of a package.
+	- what signing does ? 
+		- helm package --sign creates a .tgz chart and a .prov provenance file containing a PGP signature.
+		- Consumers can run helm verify <chart>.tgz (with the public key present) to confirm the chart hasn’t been tampered with.
+		- Signing proves who published the package and that the package content is unchanged since signing.
+		- "helm install" won't automatically verify signatures — verification is an explicit step.
+		- use PGP/GPG signing of Helm chart packages
+		- along with the package for example "myapp-1.2.3.tgz" its provenance file will be stored "myapp-1.2.3.tgz.prov", the 
+			charts will be compared with this "provenance file".
+		- In the video lecture thy used "GnuPG".
+		
+- What is a Helm Starter?
+	- Helm Starters are reusable chart skeletons that help you create new Helm charts with a predefined structure and templates.
+	
+	- Its a
+		✔ reusable chart blueprint
+		✔ containing pre-defined folders, templates, values, best practices
+		✔ used to avoid writing charts from scratch every time
+		✔ You maintain a standard structure for all your charts, Helps teams enforce consistency, especially in large 
+			organizations
+	
+	- for example If you want to creata a python web application chart, you can creata a starter and give it to our team members 
+	or teams across our organisation to use our starter as a base template to create their own chart. 
+	
+	- To create a chart using a starter:
+		helm create mychart --starter my-starter
+		
+	- enter the below command to to know, where helm expects you to store the starters : 
+		- helm env HELM_DATA_HOME --> (returns : C:\Users\sbk2k\AppData\Roaming\helm) its home folder to store helm relarted data , keep your chart here under "C:\Users\sbk2k\AppData\Roaming\helm\charts\<starter-name>"
+		- to make your chart as starter, replace all the existance of your chart name with <CHARTNAME> placeholder.
+			Ex: to make my-chart-release chart as starter, replace all the existance of "my-chart-release" with "<CHARTNAME>" in all the ".yaml" files. other than "values.yaml"
+			
+	- to creata a chart from starter use the below command :
+		helm create --starter <starter-name> <your-new-chart-name>
+		
+- Helm Plugin :
+	- A Helm plugin is an extension that adds extra commands or features to Helm beyond the built-in functionality.
+	- Plugins allow you to customize or enhance Helm by adding your own CLI subcommands.
+	- To Install a Plugin:	helm plugin install <plugin-url> (Ex: helm plugin install 		
+		https://github.com/salesforce/helm-starter)
+	- List Installed Plugins :	helm plugin list
+	- Remove a Plugin :	helm plugin remove <plugin-name>
+	
+	- We can create our own custom Plugins
+	- "plugin.yaml" is the main and mandatory file required while plugin creation.
+	
+- Helm Schema Validation:
+	- Helm provides a feature called schema validation to ensure that the values passed into a Helm chart (values.yaml or -f 
+		custom.yaml) are correct in structure, type, and format. 
+		
+	- This uses a file named "values.schema.json", placed inside your chart’s root directory, same level as "values.yaml" file.
+	
+	- With schema validation:
+		- Helm validates input values before rendering templates
+		- Errors become clear and user-friendly
+		- Charts become more predictable and safe
+		
+	✔ Schema validation works only with: Helm 3.5+
+	
+	- Its very difficult to write the "values.schema.json" file for all the values in "values.yaml", so there is a way to generate the "values.schema.json" based on "values.yaml".
+		- You need to figureout which is the best third party tool best for you to generate schema.
+			Ex: Using jsonschema-generator (Node.js)
+				step 1 : Install required tools		→ "pip install genson" and "choco install yq"
+				step 2 : Convert YAML to JSON 		→ "yq -o=json values.yaml > values.json"
+				step 3 : Generate schema			→ "genson values.json > values.schema.json"
+				
+		
+Complete set of steps for running an application in Kubernetes. 
+learning from (Docker + Kubernetes + Helm )
+---------------------------------------------------------------
+
+1. Write a Dockerfile (to build your application image)
+	- Defines how your container image is built.
+	
+2. Build the Docker image
+	- docker build -t <image-name>:<tag> .
+	
+3. Test the image locally (optional but recommended)
+	- docker run -p 8080:8080 <image-name>:<tag>
+	
+4. Push the image to a container registry
+	- Docker Hub / ECR / GCR / ACR / GHCR
+	- docker push <registry>/<image-name>:<tag>
+	
+5. (Optional) Create docker-compose.yml for local multi-container testing
+	- Only for local development, not needed for Kubernetes.
+	
+6. Create Kubernetes manifest files (.yaml)
+	Examples:
+		- Deployment
+		- Service (mandatory if you need network access)
+		- ConfigMap (optional)
+		- Secret (optional)
+		- Ingress (optional)
+		- Namespace (optional)
+	
+7. Configure the image reference inside Deployment
+	containers:
+	  - name: myapp
+		image: registry/myapp:1.0
+
+8. Apply the Kubernetes manifests
+	kubectl apply -f deployment.yaml
+	kubectl apply -f service.yaml
+
+
+9. Verify that your application is running
+	kubectl get pods
+	kubectl get deployments
+	kubectl get svc
+
+10. (Optional but Recommended) Add Probes
+	- livenessProbe 
+	- readinessProbe
+	- startupProbe
+	
+11. (Optional) Expose application externally
+	Using:
+		- NodePort
+		- LoadBalancer
+		- Ingress controller
+		
+12. (Optional) Use Helm chart instead of raw YAML
+	If app is complex, create a Helm chart.

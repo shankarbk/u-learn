@@ -1,0 +1,136 @@
+HELM COMMANDS - DAILY REFERENCE & INTERVIEW CHEAT SHEET
+==============================================================
+
+Format:
+<command> : <explanation>
+            Example: <example command>
+
+--------------------------------------------------------------
+MOST USED / DAILY HELM COMMANDS
+--------------------------------------------------------------
+helm repo add <name> <url> : Add a Helm chart repository
+            Example: helm repo add bitnami https://charts.bitnami.com/bitnami
+
+helm repo update : Refresh all chart repositories
+            Example: helm repo update
+
+helm search repo <keyword> : Search for charts inside added repositories
+            Example: helm search repo nginx
+
+helm install <release> <chart> : Install a chart and create a release
+            Example: helm install myapp bitnami/nginx
+
+helm upgrade <release> <chart> : Upgrade an existing Helm release
+            Example: helm upgrade myapp bitnami/nginx
+
+helm uninstall <release> : Remove a Helm release
+            Example: helm uninstall myapp
+
+helm list : List installed releases
+            Example: helm list
+
+helm list -A : List releases across all namespaces
+            Example: helm list -A
+
+helm status <release> : Show release status and resources
+            Example: helm status myapp
+
+helm rollback <release> <revision> : Roll back to a previous revision
+            Example: helm rollback myapp 1
+
+--------------------------------------------------------------
+TEMPLATE, DEBUG & INSPECTION COMMANDS
+--------------------------------------------------------------
+helm template <chart> : Render templates locally without installing
+            Example: helm template ./mychart
+
+helm lint <chart> : Validate a chart for correctness
+            Example: helm lint ./mychart
+
+helm get values <release> : Show values used for a release
+            Example: helm get values myapp
+
+helm get manifest <release> : Show the rendered manifests
+            Example: helm get manifest myapp
+
+helm get notes <release> : Show installation notes
+            Example: helm get notes myapp
+
+helm show values <chart> : Display default chart values
+            Example: helm show values bitnami/nginx
+
+helm show chart <chart> : Show chart metadata from Chart.yaml
+            Example: helm show chart bitnami/nginx
+
+helm show all <chart> : Show all chart information
+            Example: helm show all bitnami/nginx
+
+--------------------------------------------------------------
+VALUES OVERRIDES & CUSTOMIZATION
+--------------------------------------------------------------
+helm install <release> <chart> -f values.yaml : Install with custom values
+            Example: helm install myapp ./mychart -f values.yaml
+
+helm upgrade <release> <chart> -f values.yaml : Upgrade using values file
+            Example: helm upgrade myapp ./mychart -f values.yaml
+
+helm install <release> <chart> --set key=value : Override values inline
+            Example: helm install myapp ./mychart --set replicaCount=3
+
+helm upgrade <release> <chart> --set key=value : Apply inline override during upgrade
+            Example: helm upgrade myapp ./mychart --set image.tag=v2
+
+helm diff upgrade <release> <chart> : Show differences before upgrading (needs diff plugin)
+            Example: helm diff upgrade myapp ./mychart
+
+--------------------------------------------------------------
+CHART DEVELOPMENT COMMANDS
+--------------------------------------------------------------
+helm create <chart-name> : Create a new chart template
+            Example: helm create mychart
+
+helm package <chart-dir> : Package a chart into a .tgz file
+            Example: helm package ./mychart
+
+helm dependency update <chart> : Download/update chart dependencies
+            Example: helm dependency update ./mychart
+
+helm dependency build <chart> : Build dependencies from Chart.lock
+            Example: helm dependency build ./mychart
+
+--------------------------------------------------------------
+REPO MANAGEMENT
+--------------------------------------------------------------
+helm repo list : List added repositories
+            Example: helm repo list
+
+helm repo remove <name> : Remove a repository
+            Example: helm repo remove bitnami
+
+--------------------------------------------------------------
+ADVANCED COMMANDS
+--------------------------------------------------------------
+helm env : Show Helm environment variables
+            Example: helm env
+
+helm plugin list : List installed plugins
+            Example: helm plugin list
+
+helm uninstall <release> --keep-history : Uninstall but retain history
+            Example: helm uninstall myapp --keep-history
+
+helm history <release> : Show all revision history of a release
+            Example: helm history myapp
+
+--------------------------------------------------------------
+INTERVIEW-READY ONE-LINERS
+--------------------------------------------------------------
+helm install myapp ./mychart --debug --dry-run : Preview installation with debug logs
+helm template ./mychart > output.yaml : Render and save manifests to a file
+helm upgrade --install myapp ./mychart : Install if missing, upgrade otherwise
+helm rollback myapp 2 : Roll back release to revision 2
+helm list -A : List releases across all namespaces
+
+--------------------------------------------------------------
+END OF FILE
+--------------------------------------------------------------

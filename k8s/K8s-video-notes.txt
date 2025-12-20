@@ -1292,43 +1292,40 @@ Note (while using database images as container) :
 			
 		Visual Diagram of above ingress-service.yaml configuration:
 		--------------------------------------
-					  ┌───────────────────────────┐
-                      │        External User       │
-                      │   (Browser / API Client)   │
-                      └──────────────┬─────────────┘
-                                     │  HTTP Request
-                                     ▼
-                       ┌───────────────────────────┐
-                       │     Ingress Controller     │
-                       │         (NGINX)            │
-                       └──────────────┬─────────────┘
-                          Routes based on URL path
-      ┌──────────────────────┴───────────────────────────┐
-      │                                                  │
-      │                                                  │
-      ▼                                                  ▼
-
-┌───────────────────┐                             ┌─────────────────────┐
+						  ┌────────────────────────────┐
+						  │        External User       │
+						  │   (Browser / API Client)   │
+						  └──────────────┬─────────────┘
+										 │  HTTP Request
+										 ▼
+						   ┌────────────────────────────┐
+						   │     Ingress Controller     │
+						   │         (NGINX)            │
+						   └──────────────┬─────────────┘
+							  Routes based on URL path
+		  ┌──────────────────────┴───────────────────────────┐
+		  │                                                  │
+		  │                                                  │
+		  ▼                                                  ▼
+┌────────────────────┐                             ┌─────────────────────┐
 │  Frontend Rule     │                             │   Backend Rule      │
 │ Path: /?(.*)       │                             │ Path: /api/?(.*)    │
 │ Rewrites: /$1      │                             │ Rewrites: /$1       │
 └─────────┬──────────┘                             └──────────┬──────────┘
           │ Forward to service                                  │ Forward to service
           ▼                                                     ▼
-
 ┌───────────────────────────────┐               ┌───────────────────────────────┐
 │ client-cluster-ip-service     │               │ server-cluster-ip-service     │
 │ Port: 3000                    │               │ Port: 5000                    │
 └──────────────┬────────────────┘               └──────────────┬────────────────┘
-               │                                                │
-               │                                                │
-               ▼                                                ▼
-
-    ┌───────────────────────────┐               ┌───────────────────────────┐
-    │   Frontend Pods           │               │         Backend Pods       │
-    │ (React / Client App)      │               │   (Node.js / API Server)   │
-    │ Port 3000                 │               │        Port 5000           │
-    └───────────────────────────┘               └───────────────────────────┘
+               │                                               │
+               │                                               │
+               ▼                                               ▼
+┌───────────────────────────┐               ┌───────────────────────────┐
+│   Frontend Pods           │               │         Backend Pods      │
+│ (React / Client App)      │               │   (Node.js / API Server)  │
+│ Port 3000                 │               │        Port 5000          │
+└───────────────────────────┘               └───────────────────────────┘
 
 
 	* In Development environment,our NGINX configuration is attempting to force anyone who comes to our page to use a HTTPS connection as opposed to HTTP. By Default the NGINX Ingress is going to use a kind of dummy certificate.
