@@ -1,0 +1,121 @@
+Ansible setup for multiple servers in local 
+1. install virtual box software (https://www.virtualbox.org/)
+2. install pre-installed pre-configured operating system images (https://www.osboxes.org/centos/#centos-10-vbox) 
+	64 bit :
+		- “Workstation” — a VM image with a desktop environment / GUI pre-installed.
+		- “Server” — a VM image that boots into a lightweight, command-line / console-only mode, without a GUI.
+3. go to virtualbox (select Expert mode)--> new --> 
+	VM name : "centos-template"
+	OS : Linux
+	OS Distribution : Other Linux
+	OS Version : Other linux 64 bit
+	 creating as CentOS-template, because, as we discussed, our goal is to create a template, and then use that template to create
+		as many virtual machines as I need.
+	click on finish
+	
+4. once it appered on the list
+	- right click on it --> settings -->system --> processor --> set number of CPU to 2
+	
+	- right click on it --> settings -->network --> check to --> enable network adopter --> Attached to : bridge adopter
+	
+- Then go to main list (centos-template) --> right click on it --> start command mode 
+then go to (https://www.osboxes.org/centos/#centos-10-info) --> grab the login credentials 
+username : osboxes
+password : osboxes.org
+
+- click on right control button to come out of VM Mouse/keyboard inputs
+
+- login to VM and open terminal --> type command "ifconfig"
+notedown the enp0s3 ipv4 address , its the ip address of your VM (192.168.1.10)
+
+login via mobaxterm, with the SSH :
+	ip address : 192.168.1.10
+	username : osboxees
+	port 22
+	
+- install and enable ssh deamon on the system and then do cloning :
+	use below commands :
+		 sudo yum -y install openssh-server openssh-clients
+		 # Or for newer CentOS versions (8 and above)
+		sudo dnf -y install openssh-server openssh-clients
+		
+	Start and Enable SSH Service.
+	Start the SSH daemon and configure it to start automatically at boot.
+		  sudo systemctl start sshd
+		  sudo systemctl enable sshd
+	
+	If firewalld is active on your CentOS host, allow SSH traffic through the firewall.
+	
+		sudo firewall-cmd --add-service=ssh --permanent
+		sudo firewall-cmd --reload
+	
+	Verify SSH Status.
+	Confirm that the SSH service is running and accessible.
+		sudo systemctl status sshd
+		# To check if port 22 (default SSH port) is open
+		sudo netstat -tulpn | grep :22
+	
+then shut it down this (192.168.1.10) by "sudo shutdown now". because we need to create new clones from this.
+
+go back to VM, right click on it and clone.
+
+name : ansible-controller(master)
+clone type: linked clone 
+mac address policy : generate new address for all network adopter (because we need diff mac address then earlier)
+
+clone 2 more for ansible-target-1 and ansible-target-2
+
+start ansible master VM and get the ip address from it and configure it to mobaxterm , repeate this step for ansible-target
+ansible-controller ip : 192.168.1.12
+ansible target-1 ip : 192.168.1.11
+ansible target-2 ip : 192.168.1.13
+
+login to machines via mobaxterm. and then 
+change the names of hosts using these nelow commands 
+	sudo vi /etc/hostname --> change the name to the respective machines 
+		fir ansible master machine use the name as "ansible-controller"
+		for ansible-target-1 machine use the name as "ansible-target-1"
+		for ansible-target-2 machine use the name as "ansible-target-2"
+		
+	sudo vi /etc/hosts --> keep the naming as below (don't change any ports)
+		for ansible master machine use the name as
+			127.0.0.1   localhost ansible-controller
+			::1         localhost ansible-controller
+			
+		for ansible target1 machine use the name as
+			127.0.0.1   localhost ansible-target-1
+			::1         localhost ansible-target-1
+			
+		for ansible target2 machine use the name as
+			127.0.0.1   localhost ansible-target-2
+			::1         localhost ansible-target-2
+
+install ansible in master mchine (ansible-controller)
+based on yor OS type use the commands, for cent os "sudo yum install ansible"
+
+
+- created a ansible user on target1 and target2 
+	sudo useradd ansible-user
+	sudo passwd ansible@123
+	
+- Set up SSH key-based auth from master → target
+  On the master: 
+	Generate SSH key: "ssh-keygen -t ed25519"
+	This creates:
+		Private key: ~/.ssh/id_ed25519
+		Public key: ~/.ssh/id_ed25519.pub
+		
+	Copy the key to the target:
+	On the master : 
+		ssh-copy-id ansible-user@TARGET_IP
+		
+- Now test login without password from master:
+	ssh ansible-user@TARGET_IP
+	
+	If you get in without asking a password → ✔ SSH is ready.
+
+
+
+
+
+	

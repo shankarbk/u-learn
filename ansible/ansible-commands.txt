@@ -1,0 +1,139 @@
+ANSIBLE COMMANDS - DAILY REFERENCE & INTERVIEW CHEAT SHEET
+===============================================================
+
+Format:
+<command> : <explanation>
+            Example: <example command>
+
+---------------------------------------------------------------
+MOST USED / DAILY ANSIBLE COMMANDS
+---------------------------------------------------------------
+ansible --version : Show installed Ansible version and configuration paths
+            Example: ansible --version
+
+ansible all -m ping : Test connectivity to all hosts in inventory
+            Example: ansible all -m ping
+
+ansible <group> -m ping : Test connectivity to a specific host group
+            Example: ansible webservers -m ping
+
+ansible <host> -a "<command>" : Run an ad-hoc command on target host(s)
+            Example: ansible all -a "uptime"
+
+ansible-playbook <playbook.yml> : Run an Ansible playbook
+            Example: ansible-playbook site.yml
+
+ansible-playbook <playbook.yml> -i <inventory> : Run playbook with custom inventory
+            Example: ansible-playbook site.yml -i hosts.ini
+
+---------------------------------------------------------------
+INVENTORY & CONFIGURATION
+---------------------------------------------------------------
+ansible-inventory --list : Display parsed inventory in JSON
+            Example: ansible-inventory --list
+
+ansible-inventory --graph : Show inventory structure as a graph
+            Example: ansible-inventory --graph
+
+ansible-config list : List all Ansible configuration options
+            Example: ansible-config list
+
+ansible-config view : Show active Ansible configuration
+            Example: ansible-config view
+
+---------------------------------------------------------------
+PRIVILEGE ESCALATION & AUTH
+---------------------------------------------------------------
+ansible all -b -m ping : Run task with privilege escalation (sudo)
+            Example: ansible all -b -m ping
+
+ansible-playbook site.yml -b : Run playbook with sudo
+            Example: ansible-playbook site.yml -b
+
+ansible-playbook site.yml -K : Prompt for sudo password
+            Example: ansible-playbook site.yml -K
+
+---------------------------------------------------------------
+CHECK, DIFF & DRY-RUN
+---------------------------------------------------------------
+ansible-playbook site.yml --check : Run playbook in check (dry-run) mode
+            Example: ansible-playbook site.yml --check
+
+ansible-playbook site.yml --diff : Show differences when files change
+            Example: ansible-playbook site.yml --diff
+
+---------------------------------------------------------------
+TAGS, LIMIT & VERBOSITY
+---------------------------------------------------------------
+ansible-playbook site.yml --tags "<tag>" : Run only tasks with specific tag
+            Example: ansible-playbook site.yml --tags install
+
+ansible-playbook site.yml --skip-tags "<tag>" : Skip tasks with specific tag
+            Example: ansible-playbook site.yml --skip-tags debug
+
+ansible-playbook site.yml --limit <host/group> : Limit execution to hosts or groups
+            Example: ansible-playbook site.yml --limit web1
+
+ansible-playbook site.yml -v : Increase verbosity (debugging)
+            Example: ansible-playbook site.yml -vvv
+
+---------------------------------------------------------------
+MODULE DISCOVERY & HELP
+---------------------------------------------------------------
+ansible-doc -l : List all available Ansible modules
+            Example: ansible-doc -l
+
+ansible-doc <module> : Show documentation for a module
+            Example: ansible-doc yum
+
+---------------------------------------------------------------
+VAULT (SECRETS MANAGEMENT)
+---------------------------------------------------------------
+ansible-vault create secrets.yml : Create an encrypted vault file
+            Example: ansible-vault create secrets.yml
+
+ansible-vault edit secrets.yml : Edit an encrypted vault file
+            Example: ansible-vault edit secrets.yml
+
+ansible-vault view secrets.yml : View encrypted file content
+            Example: ansible-vault view secrets.yml
+
+ansible-vault encrypt file.yml : Encrypt an existing file
+            Example: ansible-vault encrypt vars.yml
+
+ansible-vault decrypt file.yml : Decrypt an encrypted file
+            Example: ansible-vault decrypt vars.yml
+
+---------------------------------------------------------------
+ROLES & GALAXY
+---------------------------------------------------------------
+ansible-galaxy init <role-name> : Create a new role skeleton
+            Example: ansible-galaxy init webserver
+
+ansible-galaxy install <role> : Install a role from Ansible Galaxy
+            Example: ansible-galaxy install geerlingguy.nginx
+
+ansible-galaxy list : List installed roles
+            Example: ansible-galaxy list
+
+---------------------------------------------------------------
+COLLECTIONS
+---------------------------------------------------------------
+ansible-galaxy collection install <collection> : Install a collection
+            Example: ansible-galaxy collection install amazon.aws
+
+ansible-galaxy collection list : List installed collections
+            Example: ansible-galaxy collection list
+
+---------------------------------------------------------------
+INTERVIEW-READY ONE-LINERS
+---------------------------------------------------------------
+ansible all -m setup : Gather facts from all hosts
+ansible-playbook site.yml --syntax-check : Validate playbook syntax
+ansible-playbook site.yml --list-tasks : List tasks that would run
+ansible-playbook site.yml --list-hosts : List target hosts
+ansible-playbook site.yml --step : Execute playbook step-by-step
+
+---------------------------------------------------------------
+END OF FILE
+---------------------------------------------------------------

@@ -1,0 +1,74 @@
+difference AND relationship between
+👉 Inventory
+👉 Playbook
+👉 ansible.cfg
+
+
+What is Ansible Inventory?
+	- Inventory = Target machines
+	
+	- Inventory defines WHERE to run automation
+	- It is the list of hosts/servers Ansible manages.
+	- Tells Ansible which machines exist
+	- Can store host/group variables
+	
+	Example:
+		hosts.ini
+		---------
+		web1 ansible_host=172.20.1.100 
+		web2 ansible_host=172.20.1.101 dns_server=10.5.5.4
+		web1 ansible_host=172.20.1.102
+		
+		[webservers]
+		web1
+		web2
+		web3
+		
+
+What is Ansible Playbook?
+	- Playbook = Instructions to run on those target machines
+	
+	- Playbook defines WHAT to do on those hosts
+	- It is a YAML file that contains tasks, actions, roles, and automation logic.
+	- Describes configuration, deployment, orchestration steps
+	- References hosts from inventory
+	
+	Example:
+		site.yml
+		--------
+		- hosts: web
+		  tasks:
+			- name: Install nginx
+			  yum:
+				name: nginx
+				state: present
+				
+
+What is ansible.cfg ?
+	- ansible.cfg = Rules for Ansible execution
+	
+	- Configuration/settings file for Ansible itself
+	- It controls HOW Ansible behaves.
+	- Sets defaults like inventory location, SSH user, timeout, roles paths
+	- Overrides Ansible runtime behavior
+	
+	Example:
+		/ect/ansible/ansible.cfg
+		------------------------
+		[defaults]
+		inventory = hosts.ini
+		remote_user = ubuntu
+		timeout = 30
+		host_key_checking = False
+
+		
+		
+		
+✔ Inventory tells Ansible WHERE to run.
+✔ Playbook tells Ansible WHAT to run.
+✔ ansible.cfg tells Ansible HOW to run.
+
+
+✔ Inventory = Where
+✔ Playbook = What
+✔ ansible.cfg = How
