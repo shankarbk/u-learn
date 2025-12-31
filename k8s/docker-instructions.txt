@@ -1,0 +1,260 @@
+DOCKER INSTRUCTIONS (Dockerfile) – STEP BY STEP GUIDE
+
+This file explains the most commonly used Dockerfile instructions with
+clear explanations and simple examples. Useful for daily reference
+and interviews.
+
+------------------------------------------------------------
+1. FROM
+------------------------------------------------------------
+Purpose:
+Defines the base image for your Docker image.
+
+Why:
+Every Docker image starts from a base image (OS or runtime).
+
+Example:
+FROM ubuntu:22.04
+
+------------------------------------------------------------
+2. LABEL
+------------------------------------------------------------
+Purpose:
+Adds metadata to an image (maintainer, version, description).
+
+Why:
+Helps in documentation and image management.
+
+Example:
+LABEL maintainer="admin@example.com"
+LABEL version="1.0"
+
+------------------------------------------------------------
+3. WORKDIR
+------------------------------------------------------------
+Purpose:
+Sets the working directory inside the container.
+
+Why:
+Avoids repeating paths in RUN, CMD, COPY, ADD instructions.
+
+Example:
+WORKDIR /app
+
+------------------------------------------------------------
+4. RUN
+------------------------------------------------------------
+Purpose:
+Executes commands during image build.
+
+Why:
+Used to install packages and configure the image.
+
+Example:
+RUN apt-get update && apt-get install -y nginx
+
+Note:
+Each RUN creates a new image layer.
+
+------------------------------------------------------------
+5. COPY
+------------------------------------------------------------
+Purpose:
+Copies files from host to container.
+
+Why:
+Used to copy application code or config files.
+
+Example:
+COPY app.py /app/app.py
+
+------------------------------------------------------------
+6. ADD
+------------------------------------------------------------
+Purpose:
+Copies files and supports URLs and tar extraction.
+
+Why:
+More powerful than COPY, but less predictable.
+
+Example:
+ADD app.tar.gz /app/
+
+Best Practice:
+Prefer COPY unless ADD features are required.
+
+------------------------------------------------------------
+7. ENV
+------------------------------------------------------------
+Purpose:
+Sets environment variables inside the container.
+
+Why:
+Used for configuration values.
+
+Example:
+ENV APP_ENV=production
+ENV PORT=8080
+
+------------------------------------------------------------
+8. ARG
+------------------------------------------------------------
+Purpose:
+Defines build-time variables.
+
+Why:
+Used during image build, not available at runtime.
+
+Example:
+ARG VERSION=1.0
+
+------------------------------------------------------------
+9. EXPOSE
+------------------------------------------------------------
+Purpose:
+Documents the port the container listens on.
+
+Why:
+Helps users understand which ports are used.
+
+Example:
+EXPOSE 80
+
+Note:
+Does NOT publish the port automatically.
+
+------------------------------------------------------------
+10. USER
+------------------------------------------------------------
+Purpose:
+Specifies the user to run container processes.
+
+Why:
+Improves security by avoiding root user.
+
+Example:
+USER appuser
+
+------------------------------------------------------------
+11. VOLUME
+------------------------------------------------------------
+Purpose:
+Creates a mount point for persistent data.
+
+Why:
+Used for data persistence.
+
+Example:
+VOLUME /var/lib/mysql
+
+------------------------------------------------------------
+12. CMD
+------------------------------------------------------------
+Purpose:
+Defines the default command to run container.
+
+Why:
+Executed when container starts.
+
+Example:
+CMD ["nginx", "-g", "daemon off;"]
+
+Note:
+Only one CMD allowed (last one wins).
+
+------------------------------------------------------------
+13. ENTRYPOINT
+------------------------------------------------------------
+Purpose:
+Configures container as an executable.
+
+Why:
+Ensures command always runs.
+
+Example:
+ENTRYPOINT ["python", "app.py"]
+
+------------------------------------------------------------
+14. CMD vs ENTRYPOINT
+------------------------------------------------------------
+CMD:
+- Can be overridden easily
+
+ENTRYPOINT:
+- Cannot be overridden without --entrypoint
+
+Best Practice:
+Use ENTRYPOINT + CMD together.
+
+------------------------------------------------------------
+15. HEALTHCHECK
+------------------------------------------------------------
+Purpose:
+Checks container health status.
+
+Why:
+Helps orchestration tools detect failures.
+
+Example:
+HEALTHCHECK CMD curl --fail http://localhost:80 || exit 1
+
+------------------------------------------------------------
+16. STOPSIGNAL
+------------------------------------------------------------
+Purpose:
+Defines signal to stop container.
+
+Why:
+Allows graceful shutdown.
+
+Example:
+STOPSIGNAL SIGTERM
+
+------------------------------------------------------------
+17. ONBUILD
+------------------------------------------------------------
+Purpose:
+Triggers instructions when image is used as base.
+
+Why:
+Used for builder images.
+
+Example:
+ONBUILD COPY . /app
+
+------------------------------------------------------------
+18. SHELL
+------------------------------------------------------------
+Purpose:
+Changes default shell.
+
+Why:
+Useful for Windows or custom shells.
+
+Example:
+SHELL ["/bin/bash", "-c"]
+
+------------------------------------------------------------
+SAMPLE SIMPLE DOCKERFILE
+------------------------------------------------------------
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+EXPOSE 5000
+CMD ["python", "app.py"]
+
+------------------------------------------------------------
+BEST PRACTICES
+------------------------------------------------------------
+- Use small base images (alpine/slim)
+- Minimize number of layers
+- Avoid running as root
+- Use .dockerignore
+- Prefer COPY over ADD
+- Pin image versions
+
+------------------------------------------------------------
+END OF FILE
+------------------------------------------------------------
